@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiredev/components/Output/OutputInfoJob.dart';
 import 'package:hiredev/models/JobDetail.dart';
+import 'package:hiredev/models/UserMode.dart';
+import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/screens/ApplyJob/ApplyJob.dart';
 import 'package:hiredev/services/apiServices.dart';
 import 'package:hiredev/utils/currency.dart';
+import 'package:hiredev/utils/secure_storage_service.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final String id;
@@ -19,11 +24,13 @@ class JobDetailScreen extends StatefulWidget {
 class JobDetailScreenState extends State<JobDetailScreen> {
   Jobdetail? job;
   bool isLoading = true;
-
+  bool isFavorite = false;
+  final SecureStorageService secureStorageService = SecureStorageService();
   @override
   void initState() {
     super.initState();
     getJobDetail();
+    getDetailFavorite();
   }
 
   Future<void> getJobDetail() async {
@@ -35,11 +42,82 @@ class JobDetailScreenState extends State<JobDetailScreen> {
         job = Jobdetail.fromJson(response['data']);
         isLoading = false;
       });
-      print('Response Data: ${response['data']}');
     } else {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> favoriteJob() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final UserModel? user = userProvider.user;
+    String? token = await secureStorageService.getRefreshToken();
+    final response = await ApiService()
+        .post(dotenv.env['API_URL']! + "favorite-jobs", {
+          'jobTitle': widget.title.toString(),
+          'job_id': widget.id.toString(),
+          'user_id': user!.id.toString(),
+        }, token: token);
+    if (response['statusCode'] == 201) {
+      if (response['data'].length == 0) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Đã hủy yêu thích')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã thêm vào danh sách yêu thích')),
+        );
+      }
+      getDetailFavorite();
+    }
+
+    if (response['statusCode'] == 400) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("${response['message']}")));
+    }
+    if (response['status'] == 419) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("${response['message']}")));
+    }
+  }
+
+  Future<void> getDetailFavorite() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final UserModel? user = userProvider.user;
+    String? token = await secureStorageService.getRefreshToken();
+    final response = await ApiService().get(
+      dotenv.env['API_URL']! +
+          "favorite-jobs/get-detail?user_id=${user!.id}&job_id=${widget.id}",
+      token: token,
+    );
+    if (response['statusCode'] == 200) {
+      setState(() {
+        isFavorite = true;
+      });
+    }
+    if (response['response']['statusCode'] == 404) {
+      setState(() {
+        isFavorite = false;
+      });
+    }
+  }
+
+  Future<void> applyJob() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final UserModel? user = userProvider.user;
+    String? token = await secureStorageService.getRefreshToken();
+    final response = await ApiService().post(
+      dotenv.env['API_URL']! + "apply-jobs",
+      {'job_id': widget.id.toString(), 'user_id': user!.id.toString()},
+      token: token,
+    );
+    if (response['statusCode'] == 201) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Đã ứng tuyển')));
     }
   }
 
@@ -50,15 +128,6 @@ class JobDetailScreenState extends State<JobDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (job != null) {
-      print("Skills data: ${job!.skills}");
-      for (var skill in job!.skills) {
-        print("Skill name: ${skill.name}");
-      }
-    } else {
-      print("Job is still null");
-    }
-
     return Scaffold(
       body:
           isLoading
@@ -90,7 +159,7 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                           children: [
                             // Back button
                             IconButton(
-                              icon: Icon(Icons.arrow_back, color: Colors.white),
+                              icon: Icon(Icons.close, color: Colors.white),
                               onPressed: () {
                                 Navigator.pop(context);
                               },
@@ -743,7 +812,27 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                                 ),
                                 elevation: 0,
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => ApplyJob(
+                                          jobTitle: job!.title,
+                                          jobImage: job!.user.avatarCompany,
+                                          companyName: job!.user.companyName,
+                                          isNegotiable:
+                                              job!.isNegotiable.toString(),
+                                          city: job!.city.name,
+                                          district: job!.district.name,
+                                          salaryType: job!.salaryType,
+                                          typeMoney: job!.typeMoney.code,
+                                          salaryRangeMax: job!.salaryRangeMax,
+                                          salaryRangeMin: job!.salaryRangeMin,
+                                        ),
+                                  ),
+                                );
+                              },
                               child: Text(
                                 "Ứng Tuyển",
                                 style: TextStyle(
@@ -755,19 +844,26 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                             ),
                           ),
                           SizedBox(width: 10),
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.rectangle,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: Icon(
-                              Icons.favorite_border,
-                              size: 24,
-                              color: Colors.grey.shade700,
+                          GestureDetector(
+                            onTap: () {
+                              favoriteJob();
+                            },
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.rectangle,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Icon(
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                size: 24,
+                                color: Colors.grey.shade700,
+                              ),
                             ),
                           ),
                           SizedBox(width: 16),

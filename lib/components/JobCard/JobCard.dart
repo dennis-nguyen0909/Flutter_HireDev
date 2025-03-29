@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:hiredev/screens/JobDetail/JobDetail.dart';
+import 'package:hiredev/screens/jobDetail/JobDetail.dart';
 import 'package:hiredev/models/job.dart';
 import 'package:hiredev/utils/currency.dart';
 
 class JobCard extends StatefulWidget {
   final Job job;
+  final Color backgroundColor;
+  final bool isBorder;
+  final Color borderColor;
 
-  JobCard({required this.job});
+  JobCard({
+    required this.job,
+    this.backgroundColor = Colors.white,
+    this.isBorder = true,
+    this.borderColor = Colors.grey,
+  });
 
   @override
   State<StatefulWidget> createState() => JobCardState();
@@ -34,15 +42,20 @@ class JobCardState extends State<JobCard> {
         child: Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side:
+                widget.isBorder
+                    ? BorderSide(color: widget.borderColor)
+                    : BorderSide.none,
           ),
           elevation: 4,
+          color: widget.backgroundColor,
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Image.network(
                       widget.job.user.avatarCompany,

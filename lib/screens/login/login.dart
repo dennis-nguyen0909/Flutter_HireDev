@@ -3,10 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hiredev/colors/colors.dart';
+import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/screens/forgotPassword/ForgetPassword.dart';
+import 'package:hiredev/screens/register/Register.dart';
+import 'package:hiredev/screens/verify/EmailVerificationScreen.dart';
 import 'package:hiredev/services/apiServices.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
 import 'package:hiredev/views/app_main_screen.dart';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
+import 'package:provider/provider.dart'; // Import Provider
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -18,37 +23,67 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final SecureStorageService secureStorageService = SecureStorageService();
+
+  Future<void> retryActive(String email) async {
+    final response = await ApiService().post(
+      dotenv.env['API_URL']! + "auth/retry-active",
+      {'email': email},
+    );
+    print(response);
+  }
+
   Future<void> fetchData(String username, String password) async {
     try {
       // Sử dụng ApiService để gọi POST request
       final response = await ApiService().post(
         dotenv.env['API_URL']! + "auth/login",
         {'username': username, 'password': password},
+        token: await secureStorageService.getAccessToken(),
       );
-
+      if (response['statusCode'] == 400) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${response['message']}')));
+        return;
+      }
+      if (response['statusCode'] == 400 && response['code'] == 'not_active') {
+        await retryActive(username);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => EmailVerificationScreen(
+                  email: username,
+                  id: response['userId'],
+                ),
+          ),
+        );
+        return;
+      }
+      print("response: ${response}");
       // Kiểm tra nếu phản hồi có 'data' và 'user'
       if (response != null &&
           response['data'] != null &&
           response['data']['user'] != null) {
         String accessToken = response['data']['user']['access_token'];
         String refreshToken = response['data']['user']['refresh_token'];
+        String userId =
+            response['data']['user']['user_id']; // Lấy user_id ở đây
 
         // Lưu token vào secure storage
         await secureStorageService.saveToken(accessToken, refreshToken);
+        await secureStorageService.saveUserId(userId);
+
+        // Gọi fetchUserDetails của UserProvider
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.fetchUserDetails(userId);
 
         // Điều hướng tới màn hình khác sau khi đăng nhập thành công
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => AppMainScreen()),
         );
-      } else {
-        // Hiển thị thông báo lỗi từ server nếu dữ liệu không hợp lệ
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Đăng nhập thất bại: Dữ liệu phản hồi không hợp lệ"),
-          ),
-        );
-      }
+      } else {}
     } catch (e) {
       // Hiển thị lỗi từ server qua SnackBar
       ScaffoldMessenger.of(
@@ -76,36 +111,47 @@ class _LoginScreenState extends State<LoginScreen> {
     // Logic xử lý đăng nhập ở đây
     print('Email: $email');
     print('Password: $password');
-    // Thêm các bước kiểm tra email, gửi yêu cầu đăng nhập lên server...
   }
 
   Future<void> _loginWithFacebook() async {
     try {
-      // Gọi endpoint API để thực hiện OAuth login với Facebook
       final result = await FlutterWebAuth.authenticate(
-        url: dotenv.env['API_LOGIN_FACEBOOK']!, // URL API login Facebook
-        callbackUrlScheme:
-            "myapp", // Scheme của callback URL (phải trùng với Info.plist)
+        url: dotenv.env['API_LOGIN_FACEBOOK']!,
+        callbackUrlScheme: "myapp",
       );
 
-      // Parse URL để lấy access_token và refresh_token
       final uri = Uri.parse(result);
       final accessToken = uri.queryParameters['access_token'];
       final refreshToken = uri.queryParameters['refresh_token'];
-
-      // Xử lý token đăng nhập (lưu token, điều hướng trang, etc.)
+      // Bạn cần một API endpoint để xác thực Facebook token và lấy user_id
+      // Ví dụ:
+      // final response = await ApiService().post(
+      //   dotenv.env['API_URL']! + "auth/facebook",
+      //   {'access_token': accessToken},
+      // );
+      // if (response != null && response['data'] != null && response['data']['_id'] != null) {
+      //   final userId = response['data']['_id'];
+      //   await secureStorageService.saveToken(accessToken, refreshToken ?? '');
+      //   final userProvider = Provider.of<UserProvider>(context, listen: false);
+      //   await userProvider.fetchUserDetails(userId);
+      //   Navigator.pushReplacement(
+      //     context,
+      //     MaterialPageRoute(builder: (context) => AppMainScreen()),
+      //   );
+      // } else {
+      //   // Xử lý lỗi
+      // }
       print('Access token: $accessToken');
       print('Refresh token: $refreshToken');
-
-      // Có thể lưu trữ token vào secure storage hoặc điều hướng người dùng vào ứng dụng chính
     } catch (e) {
-      // Xử lý lỗi nếu có
       print('Lỗi đăng nhậpqqq: $e');
     }
   }
 
   void handleLoginGoogle() {
     print('Đăng nhập với Google');
+    // Tương tự, cần tích hợp Google Sign-In và sau đó gọi API backend để lấy user_id
+    // và gọi fetchUserDetails
   }
 
   @override
@@ -120,29 +166,32 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                Image.asset(
-                  'assets/LogoH.png',
-                  height: 80,
-                ), // Thay bằng logo của bạn
+                Image.asset('assets/LogoH.png', height: 80),
 
                 SizedBox(height: 30),
 
-                // Form Đăng Nhập
                 Text(
                   "Đăng nhập.",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                Text(
-                  "Bạn chưa có tài khoản? Tạo tài khoản",
-                  style: TextStyle(fontSize: 16, color: Colors.blueAccent),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => RegisterScreen()),
+                    );
+                  },
+                  child: Text(
+                    "Bạn chưa có tài khoản? Tạo tài khoản",
+                    style: TextStyle(fontSize: 16, color: Colors.blueAccent),
+                  ),
                 ),
 
                 SizedBox(height: 30),
 
-                // Email input
                 TextFormField(
-                  controller: emailController, // Gán controller cho email
+                  controller: emailController,
                   decoration: InputDecoration(
                     labelText: 'Địa chỉ email',
                     border: OutlineInputBorder(
@@ -154,9 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 SizedBox(height: 16),
 
-                // Password input
                 TextFormField(
-                  controller: passwordController, // Gán controller cho password
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -168,30 +216,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 SizedBox(height: 16),
 
-                // Ghi nhớ tài khoản và Quên mật khẩu
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Checkbox(value: false, onChanged: (value) {}),
-                        Text("Ghi nhớ tài khoản"),
-                      ],
-                    ),
-                    Text(
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgetPasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(
                       "Quên mật khẩu?",
                       style: TextStyle(color: Colors.blueAccent),
                     ),
-                  ],
+                  ),
                 ),
 
                 SizedBox(height: 16),
 
-                // Button Đăng Nhập
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _handleLogin, // Gọi hàm xử lý khi nhấn Đăng nhập
+                    onPressed: _handleLogin,
                     child: Text(
                       "Đăng nhập",
                       style: TextStyle(
@@ -215,7 +262,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 SizedBox(height: 16),
 
-                // Đăng nhập với Facebook
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -233,7 +279,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 SizedBox(height: 16),
 
-                // Đăng nhập với Google
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

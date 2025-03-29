@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hiredev/models/UserMode.dart';
+import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
-import 'package:hiredev/screens/login/login.dart';
+import 'package:hiredev/screens/login/Login.dart';
+import 'package:provider/provider.dart';
 
 class Account extends StatefulWidget {
   @override
@@ -22,6 +25,9 @@ class _StateAccount extends State<Account> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final UserModel? user = userProvider.user;
+    print('user: ${user}');
     return FutureBuilder<String?>(
       future: secureStorageService.getAccessToken(),
       builder: (context, snapshot) {
@@ -37,6 +43,7 @@ class _StateAccount extends State<Account> {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text("User: ${user?.fullName}"),
               Text("Token: ${snapshot.data}"),
               SizedBox(height: 20),
               ElevatedButton(onPressed: _logout, child: Text("Đăng xuất")),

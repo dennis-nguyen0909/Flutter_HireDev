@@ -7,7 +7,7 @@ class SecureStorageService {
   // Khóa cho token
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
-
+  static const String userIdKey = 'user_id';
   // Lưu token
   Future<void> saveToken(String accessToken, String refreshToken) async {
     await _storage.write(key: accessTokenKey, value: accessToken);
@@ -26,6 +26,22 @@ class SecureStorageService {
   // Xóa token
   Future<void> removeTokens() async {
     await _storage.delete(key: accessTokenKey);
+    await _storage.delete(key: refreshTokenKey);
+  }
+
+  Future<void> saveUserId(String userId) async {
+    await _storage.write(key: userIdKey, value: userId);
+  }
+
+  Future<String?> getUserId() async {
+    return await _storage.read(key: userIdKey);
+  }
+
+  Future<void> deleteAccessToken() async {
+    await _storage.delete(key: accessTokenKey);
+  }
+
+  Future<void> deleteRefreshToken() async {
     await _storage.delete(key: refreshTokenKey);
   }
 }

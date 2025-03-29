@@ -1,146 +1,427 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiredev/colors/colors.dart';
-import 'package:hiredev/screens/search/search.dart';
+import 'package:hiredev/components/JobCard/JobCard.dart';
+import 'dart:async';
+import 'package:hiredev/components/TextIcon/TextIcon.dart';
+import 'package:hiredev/models/job.dart';
 import 'package:hiredev/services/apiServices.dart';
 
-class Home extends StatefulWidget {
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _StateHome createState() => _StateHome();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _StateHome extends State<Home> {
-  List<dynamic> jobs = [];
-  dynamic meta = {
-    'count': 0,
-    'current_page': 0,
-    'total': 0,
-    'per_page': 0,
-    'total_pages': 0,
-  };
-  String searchText = "";
+class _HomeScreenState extends State<HomeScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  Timer? _timer;
+  bool _isLoading = false; // Đổi tên để rõ ràng hơn
+  bool _isLoadingMore = false;
+  int _currentPageNumber = 1; // Đổi tên để tránh trùng với biến trong hàm
+  int _totalPages = 1;
+  final List<Job> _jobs = []; // Đổi tên để rõ ràng hơn
+  final Map<String, dynamic> _meta = {}; // Đổi tên để rõ ràng hơn
+  final List<Map<String, dynamic>> _bannerItems = [
+    {
+      'title': 'Find Your Dream Job',
+      'description': 'Thousands of jobs waiting for you',
+      'color': Colors.blue.shade700,
+    },
+    {
+      'title': 'Top Tech Companies',
+      'description': 'Work with industry leaders',
+      'color': Colors.green.shade700,
+    },
+    {
+      'title': 'Remote Opportunities',
+      'description': 'Work from anywhere in the world',
+      'color': Colors.purple.shade700,
+    },
+    {
+      'title': 'Career Growth',
+      'description': 'Advance your developer career',
+      'color': Colors.orange.shade700,
+    },
+    {
+      'title': 'Competitive Salary',
+      'description': 'Get paid what you deserve',
+      'color': Colors.red.shade700,
+    },
+  ];
+
   @override
   void initState() {
     super.initState();
-    getJobs(); // Gọi hàm getJobs khi khởi tạo widget
-  }
-
-  Future<void> getJobs() async {
-    try {
-      final response = await ApiService().get(dotenv.env['API_URL']! + "jobs");
-      print("responseduiydeptrai ${response['data']}");
-      setState(() {
-        jobs.addAll(response['data']['items']);
-        meta = response['data']['meta'];
-      });
-      print("jobsd12313 ${jobs}");
-      print("jobsd12313 ${meta}");
-    } catch (e) {
-      print("Error ${e}");
-    }
+    _startAutoSlide();
+    _fetchJobs(); // Đổi tên hàm cho rõ ràng hơn
   }
 
   @override
   void dispose() {
-    // Hủy các subscription hoặc tác vụ ở đây nếu có
+    _timer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
-  void onTapSearch() {
-    print("searchText ${searchText}");
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => SearchScreen()),
-    );
+  void _startAutoSlide() {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_currentPage < _bannerItems.length - 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeIn,
+        );
+      }
+    });
+  }
+
+  Future<void> _fetchJobs([
+    String query = '',
+    int page = 1,
+    int pageSize = 10,
+  ]) async {
+    if (page > _totalPages || _isLoadingMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+      if (page == 1) {
+        _isLoading = true; // Set loading true khi tải trang đầu tiên
+      }
+    });
+
+    try {
+      final apiUrl =
+          query.isEmpty
+              ? '${dotenv.env['API_URL']}jobs?current=$page&pageSize=$pageSize'
+              : '${dotenv.env['API_URL']}jobs?current=$page&pageSize=$pageSize&query[keyword]=$query';
+
+      final response = await ApiService().get(apiUrl);
+
+      if (response != null &&
+          response['data'] != null &&
+          response['data']['items'] != null) {
+        setState(() {
+          List<Job> items =
+              (response['data']['items'] as List).map((item) {
+                return Job.fromJson(item);
+              }).toList();
+
+          if (page == 1) {
+            _jobs.clear();
+          }
+          _jobs.addAll(items);
+          _meta.clear();
+          _meta.addAll(Map<String, dynamic>.from(response['data']['meta']));
+
+          _currentPageNumber = page;
+          _totalPages =
+              _meta['total_pages'] ??
+              1; // Sử dụng giá trị mặc định nếu không có
+        });
+      } else {
+        // Xử lý trường hợp response hoặc data là null
+        print('Error: Failed to fetch jobs or data is invalid.');
+        // Có thể hiển thị thông báo lỗi cho người dùng ở đây
+      }
+    } catch (error) {
+      print("Error fetching jobs: $error");
+      // Xử lý lỗi cụ thể hơn, có thể hiển thị thông báo lỗi
+    } finally {
+      setState(() {
+        _isLoadingMore = false;
+        _isLoading = false; // Set loading false khi hoàn thành
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    print(_jobs.map((e) => e.title).toList()); // In ra tiêu đề các job
     return Scaffold(
-      appBar: AppBar(
-        title: Container(
-          height: 40,
-          child: TextField(
-            onTap: onTapSearch,
-            onChanged: (value) {
-              setState(() {
-                searchText = value;
-              });
-            },
-            decoration: InputDecoration(
-              hintText: 'Search job or skill...',
-              hintStyle: TextStyle(color: Colors.grey),
-              fillColor: Colors.white,
-              filled: true, // Fill background with white color
-              prefixIcon: Icon(
-                Icons.search,
-                color: AppColors.primaryColor,
-              ), // Icon inside the input
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.0),
-                borderSide: BorderSide(color: Colors.black),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.0),
-                borderSide: BorderSide(color: Colors.black),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.0),
-                borderSide: BorderSide(color: Colors.black),
-              ),
-              contentPadding: EdgeInsets.symmetric(
-                vertical: 0,
-              ), // Adjust padding to center the text
+      body: Stack(
+        children: [
+          // Nội dung chính của màn hình
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(height: 270 + MediaQuery.of(context).padding.top),
+                // Các widget khác của bạn ở đây
+                Container(
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            TextIcon(
+                              icon: Icons.book,
+                              text: 'Khám phá',
+                              colorIcon: AppColors.primaryColor,
+                            ),
+                            TextIcon(
+                              icon: Icons.location_on,
+                              text: 'Gần bạn',
+                              colorIcon: AppColors.primaryColor,
+                            ),
+                            TextIcon(
+                              icon: Icons.business,
+                              text: 'Công ty',
+                              colorIcon: AppColors.primaryColor,
+                            ),
+                            TextIcon(
+                              icon: Icons.wallet,
+                              text: 'Lương',
+                              colorIcon: AppColors.primaryColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Việc làm tốt nhất',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        _isLoading // Hiển thị loading indicator nếu đang tải trang đầu tiên
+                            ? const Center(child: CircularProgressIndicator())
+                            : _jobs.isEmpty
+                            ? const Center(
+                              child: Text('Không có việc làm nào.'),
+                            ) // Hiển thị thông báo nếu không có việc làm
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _jobs.length,
+                              itemBuilder: (context, index) {
+                                final job = _jobs[index];
+                                // Kiểm tra nếu đang tải thêm và là item cuối cùng
+                                if (index == _jobs.length - 1 &&
+                                    _isLoadingMore &&
+                                    _currentPageNumber < _totalPages) {
+                                  return Column(
+                                    children: [
+                                      JobCard(
+                                        job: job,
+                                        isBorder: true,
+                                        borderColor: const Color.fromARGB(
+                                          255,
+                                          255,
+                                          189,
+                                          198,
+                                        ),
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child:
+                                            CircularProgressIndicator(), // Hiển thị loading khi tải thêm
+                                      ),
+                                    ],
+                                  );
+                                }
+                                return JobCard(
+                                  job: job,
+                                  isBorder: true,
+                                  borderColor: const Color.fromARGB(
+                                    255,
+                                    255,
+                                    189,
+                                    198,
+                                  ),
+                                );
+                              },
+                            ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Thêm một widget để tải thêm khi cuộn đến cuối danh sách
+                if (!_isLoading &&
+                    !_isLoadingMore &&
+                    _currentPageNumber < _totalPages &&
+                    _jobs.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _fetchJobs();
+                        },
+                        child: const Text('Xem thêm'),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            style: TextStyle(color: AppColors.grayColor),
           ),
-        ),
-      ),
-      body:
-          jobs.isEmpty
-              ? Center(
-                child: CircularProgressIndicator(),
-              ) // Hiển thị khi chưa có dữ liệu
-              : ListView.builder(
-                itemCount: jobs.length,
-                itemBuilder: (context, index) {
-                  final job = jobs[index];
-                  final company = job['user_id']['company_name'];
-                  final avatar = job['user_id']['avatar_company'];
-                  final city = job['city_id']['name'];
-                  final district = job['district_id']['name'];
-                  final title = job['title'];
-                  final jobType = job['job_type']['name'];
-                  final level = job['level']['name'];
-                  final skills = job['skills']
-                      .map((skill) => skill['name'])
-                      .join(', ');
-                  final expireDate = DateTime.parse(job['expire_date']);
-                  final formattedExpireDate =
-                      "${expireDate.day}/${expireDate.month}/${expireDate.year}";
-                  final salary =
-                      job['is_negotiable']
-                          ? "Negotiable"
-                          : "${job['type_money']['symbol']} ${job['salary_range']}";
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8.0,
-                      horizontal: 16.0,
-                    ),
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: (Column(children: [Row()])),
-                      ),
-                    ),
-                  );
-                },
+          // Container với gradient, đặt lên trên cùng
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              constraints: BoxConstraints(
+                minHeight: 270 + MediaQuery.of(context).padding.top,
+                maxWidth: double.infinity,
               ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.primaryColor,
+                    Colors.black,
+                  ], // Sử dụng Colors.black thay vì Color(0xFF000000)
+                ),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: MediaQuery.of(context).padding.top + 16,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'HireDev',
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Image.asset('assets/LogoH.png', scale: 80),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 255, 116, 116),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Icon(
+                                Icons.search_sharp,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 180,
+                    child: PageView.builder(
+                      controller: _pageController,
+                      onPageChanged: (int page) {
+                        setState(() {
+                          _currentPage = page;
+                        });
+                      },
+                      itemCount: _bannerItems.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          margin: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            color: _bannerItems[index]['color'],
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                offset: Offset(0, 2),
+                                blurRadius: 6.0,
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _bannerItems[index]['title'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  _bannerItems[index]['description'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _bannerItems.length,
+                      (index) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              _currentPage == index
+                                  ? AppColors.primaryColor
+                                  : Colors.grey.shade300,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
