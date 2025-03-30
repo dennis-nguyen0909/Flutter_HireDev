@@ -5,6 +5,7 @@ import 'package:hiredev/views/account/account.dart';
 import 'package:hiredev/views/company/company.dart';
 import 'package:hiredev/views/home/home.dart';
 import 'package:hiredev/views/job/job.dart';
+import 'package:hiredev/views/myjob/MyJobScreen.dart';
 import 'package:provider/provider.dart';
 
 class AppMainScreen extends StatefulWidget {
@@ -20,10 +21,17 @@ class _StateAppMainScreen extends State<AppMainScreen> {
   @override
   void initState() {
     super.initState();
-    _screens = <Widget>[HomeScreen(), JobScreen(), Company(), Account()];
+    _screens = <Widget>[
+      HomeScreen(),
+      MyJobScreen(),
+      JobScreen(),
+      Company(),
+      Account(),
+    ];
 
     _navigationItems = const <BottomNavigationBarItem>[
       BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: "My Job"),
       BottomNavigationBarItem(icon: Icon(Icons.work), label: "Jobs"),
       BottomNavigationBarItem(icon: Icon(Icons.business), label: "Companies"),
       BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: "Account"),

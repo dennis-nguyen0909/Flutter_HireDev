@@ -38,6 +38,7 @@ class JobDetailScreenState extends State<JobDetailScreen> {
       dotenv.env['API_URL']! + "jobs/${widget.id}",
     );
     if (response['statusCode'] == 200) {
+      print(response['data']);
       setState(() {
         job = Jobdetail.fromJson(response['data']);
         isLoading = false;
@@ -128,6 +129,8 @@ class JobDetailScreenState extends State<JobDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final UserModel? user = userProvider.user;
     return Scaffold(
       body:
           isLoading
@@ -804,7 +807,18 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                           Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFFFF5A5F),
+                                backgroundColor:
+                                    job!.candidateIds.contains(user!.id) ||
+                                            job!.expireDate.isBefore(
+                                              DateTime.now(),
+                                            )
+                                        ? const Color.fromARGB(
+                                          255,
+                                          200,
+                                          193,
+                                          193,
+                                        )
+                                        : Color(0xFFFF5A5F),
                                 foregroundColor: Colors.white,
                                 padding: EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
@@ -813,11 +827,19 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                                 elevation: 0,
                               ),
                               onPressed: () {
+                                if (job!.candidateIds.contains(user!.id)) {
+                                  return;
+                                }
+                                if (job!.expireDate.isBefore(DateTime.now())) {
+                                  return;
+                                }
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder:
                                         (context) => ApplyJob(
+                                          jobId: job!.id,
+                                          employerId: job!.user.id,
                                           jobTitle: job!.title,
                                           jobImage: job!.user.avatarCompany,
                                           companyName: job!.user.companyName,
@@ -834,7 +856,11 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                                 );
                               },
                               child: Text(
-                                "Ứng Tuyển",
+                                job!.candidateIds.contains(user!.id)
+                                    ? "Đã ứng tuyển"
+                                    : job!.expireDate.isBefore(DateTime.now())
+                                    ? "Hết hạn"
+                                    : "Ứng Tuyển",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,

@@ -44,6 +44,7 @@ class _StateAccount extends State<Account> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text("User: ${user?.fullName}"),
+              Text("User: ${user?.id}"),
               Text("Token: ${snapshot.data}"),
               SizedBox(height: 20),
               ElevatedButton(onPressed: _logout, child: Text("Đăng xuất")),

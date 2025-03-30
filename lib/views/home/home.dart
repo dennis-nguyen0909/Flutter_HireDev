@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/components/JobCard/JobCard.dart';
+import 'package:hiredev/components/PageView/PageViewCustom.dart';
 import 'dart:async';
 import 'package:hiredev/components/TextIcon/TextIcon.dart';
 import 'package:hiredev/models/job.dart';
 import 'package:hiredev/services/apiServices.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +18,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
+  final PageController _bannerPageController = PageController();
+  final PageController _suggestPageController = PageController();
   int _currentPage = 0;
+  int _bannerPage = 0;
+  int _suggestPage = 0;
   Timer? _timer;
   bool _isLoading = false; // Đổi tên để rõ ràng hơn
   bool _isLoadingMore = false;
@@ -56,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _startAutoSlide();
-    _fetchJobs(); // Đổi tên hàm cho rõ ràng hơn
+    _fetchJobs();
   }
 
   @override
@@ -87,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchJobs([
     String query = '',
     int page = 1,
-    int pageSize = 10,
+    int pageSize = 12,
   ]) async {
     if (page > _totalPages || _isLoadingMore) return;
 
@@ -201,61 +207,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Việc làm tốt nhất',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        PageViewCustom(
+                          title: 'Việc làm tốt nhất',
+                          controller: _bannerPageController,
+                          jobs: _jobs,
+                          isLoading: _isLoading,
+                          onPageChanged: (int page) {
+                            setState(() {
+                              _bannerPage = page;
+                            });
+                          },
                         ),
-                        _isLoading // Hiển thị loading indicator nếu đang tải trang đầu tiên
-                            ? const Center(child: CircularProgressIndicator())
-                            : _jobs.isEmpty
-                            ? const Center(
-                              child: Text('Không có việc làm nào.'),
-                            ) // Hiển thị thông báo nếu không có việc làm
-                            : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _jobs.length,
-                              itemBuilder: (context, index) {
-                                final job = _jobs[index];
-                                // Kiểm tra nếu đang tải thêm và là item cuối cùng
-                                if (index == _jobs.length - 1 &&
-                                    _isLoadingMore &&
-                                    _currentPageNumber < _totalPages) {
-                                  return Column(
-                                    children: [
-                                      JobCard(
-                                        job: job,
-                                        isBorder: true,
-                                        borderColor: const Color.fromARGB(
-                                          255,
-                                          255,
-                                          189,
-                                          198,
-                                        ),
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child:
-                                            CircularProgressIndicator(), // Hiển thị loading khi tải thêm
-                                      ),
-                                    ],
-                                  );
-                                }
-                                return JobCard(
-                                  job: job,
-                                  isBorder: true,
-                                  borderColor: const Color.fromARGB(
-                                    255,
-                                    255,
-                                    189,
-                                    198,
-                                  ),
-                                );
-                              },
-                            ),
+                        const SizedBox(height: 10),
+                        PageViewCustom(
+                          title: 'Gợi ý việc làm',
+                          controller: _suggestPageController,
+                          jobs: _jobs,
+                          isLoading: _isLoading,
+                          onPageChanged: (int page) {
+                            setState(() {
+                              _suggestPage = page;
+                            });
+                          },
+                        ),
                       ],
                     ),
                   ),

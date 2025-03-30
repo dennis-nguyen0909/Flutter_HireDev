@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TopSnackBar {
-  static void show(
-    BuildContext context,
-    String message,
-    Color backgroundColor,
-  ) {
+  static void show(BuildContext context, String message, Color backgroundColor) {
     OverlayEntry overlayEntry;
     overlayEntry = OverlayEntry(
       builder: (context) {
@@ -13,13 +9,13 @@ class TopSnackBar {
           message: message,
           backgroundColor: backgroundColor,
           onDismissed: () {
-            OverlayEntry.remove();
+            overlayEntry.remove();
           },
         );
       },
     );
     Overlay.of(context).insert(overlayEntry);
-  }
+    }
 }
 
 class TopSnackBarWidget extends StatefulWidget {
@@ -81,6 +77,10 @@ class _TopSnackBarWidgetState extends State<TopSnackBarWidget> {
             textAlign: TextAlign.center,
           ),
         ),
+      ),
+    );
+  }
+}
       ),
     );
   }
