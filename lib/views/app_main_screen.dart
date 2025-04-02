@@ -4,6 +4,7 @@ import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/screens/Notifications/Notifications.dart';
 import 'package:hiredev/screens/Search/Search.dart';
 import 'package:hiredev/views/account/account.dart';
+import 'package:hiredev/views/account/accountv2.dart';
 import 'package:hiredev/views/company/company.dart';
 import 'package:hiredev/views/home/home.dart';
 import 'package:hiredev/views/job/job.dart';
@@ -30,7 +31,7 @@ class _StateAppMainScreen extends State<AppMainScreen> {
       SearchScreen(),
       // Company(),
       Notifications(),
-      Account(),
+      AccountScreen(),
     ];
 
     _navigationItems = const <BottomNavigationBarItem>[
@@ -55,14 +56,14 @@ class _StateAppMainScreen extends State<AppMainScreen> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final UserModel? user = userProvider.user;
-    print('user: ${user?.roleName}');
+    print('user: ${user}');
 
     // Nếu roleName là EMPLOYER, chỉ hiện 2 tab là HOME và ACCOUNT
     List<Widget> activeScreens = _screens;
     List<BottomNavigationBarItem> activeItems = _navigationItems;
 
     if (user?.roleName == 'EMPLOYER') {
-      activeScreens = [HomeScreen(), Notifications(), Account()];
+      activeScreens = [HomeScreen(), Notifications(), AccountScreen()];
       activeItems = const <BottomNavigationBarItem>[
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
         BottomNavigationBarItem(
