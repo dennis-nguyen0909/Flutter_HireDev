@@ -20,7 +20,7 @@ class UserProvider extends ChangeNotifier {
   Future<void> fetchUserDetails(String userId) async {
     print('Fetching user details for ID: $userId');
     try {
-      final token = await secureStorageService.getAccessToken();
+      final token = await secureStorageService.getRefreshToken();
       print('Token obtained: $token');
       final userDetails = await _apiService.get(
         dotenv.env['API_URL']! + 'users/$userId',

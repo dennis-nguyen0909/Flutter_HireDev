@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/screens/Notifications/Notifications.dart';
+import 'package:hiredev/screens/Search/Search.dart';
 import 'package:hiredev/views/account/account.dart';
 import 'package:hiredev/views/company/company.dart';
 import 'package:hiredev/views/home/home.dart';
@@ -24,16 +26,21 @@ class _StateAppMainScreen extends State<AppMainScreen> {
     _screens = <Widget>[
       HomeScreen(),
       MyJobScreen(),
-      JobScreen(),
-      Company(),
+      // JobScreen(),
+      SearchScreen(),
+      // Company(),
+      Notifications(),
       Account(),
     ];
 
     _navigationItems = const <BottomNavigationBarItem>[
       BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
       BottomNavigationBarItem(icon: Icon(Icons.person), label: "My Job"),
-      BottomNavigationBarItem(icon: Icon(Icons.work), label: "Jobs"),
-      BottomNavigationBarItem(icon: Icon(Icons.business), label: "Companies"),
+      BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.notifications_outlined),
+        label: "Notification",
+      ),
       BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: "Account"),
     ];
   }
@@ -55,9 +62,13 @@ class _StateAppMainScreen extends State<AppMainScreen> {
     List<BottomNavigationBarItem> activeItems = _navigationItems;
 
     if (user?.roleName == 'EMPLOYER') {
-      activeScreens = [HomeScreen(), Account()];
+      activeScreens = [HomeScreen(), Notifications(), Account()];
       activeItems = const <BottomNavigationBarItem>[
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.notifications_outlined),
+          label: "Notification",
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: "Account"),
       ];
 

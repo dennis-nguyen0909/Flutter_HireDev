@@ -8,12 +8,14 @@ class JobCard extends StatefulWidget {
   final Color backgroundColor;
   final bool isBorder;
   final Color borderColor;
+  final bool isDisplayHeart;
 
   JobCard({
     required this.job,
     this.backgroundColor = Colors.white,
     this.isBorder = true,
     this.borderColor = Colors.grey,
+    this.isDisplayHeart = true,
   });
 
   @override
@@ -34,6 +36,7 @@ class JobCardState extends State<JobCard> {
 
   @override
   Widget build(BuildContext context) {
+    print(widget.job);
     return GestureDetector(
       onTap: onPressDetail,
       child: Container(
@@ -167,13 +170,14 @@ class JobCardState extends State<JobCard> {
                         ),
                       ],
                     ),
-                    Row(
-                      children: [
-                        Icon(Icons.favorite_border, color: Color(0xFF666666)),
+                    if (widget.isDisplayHeart)
+                      Row(
+                        children: [
+                          Icon(Icons.favorite_border, color: Color(0xFF666666)),
 
-                        // Text(widget.job.district.name),
-                      ],
-                    ),
+                          // Text(widget.job.district.name),
+                        ],
+                      ),
                   ],
                 ),
               ],

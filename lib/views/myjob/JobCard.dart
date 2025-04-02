@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:hiredev/screens/InfoCompany/InfoCompany.dart';
 import 'package:hiredev/screens/JobApplicationStatusScreen/JobApplicationStatusScreen.dart';
+import 'package:hiredev/screens/jobDetail/JobDetail.dart';
 import 'package:hiredev/utils/currency.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 
@@ -11,7 +13,7 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print("cv_id: ${appliedJob['cv_id']['cv_link']}");
+    print("appliedJob: ${appliedJob}");
     return GestureDetector(
       onTap: () => _showJobOptions(context), // Khi click vào JobCard
       child: Card(
@@ -163,16 +165,31 @@ class JobCard extends StatelessWidget {
                 leading: Icon(Icons.work),
                 title: Text('Xem chi tiết công việc'),
                 onTap: () {
-                  Navigator.pop(context); // Đóng modal
-                  print('Xem thông tin công ty');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => JobDetailScreen(
+                            id: appliedJob['job_id']['_id'],
+                            title: appliedJob['job_id']['title'],
+                          ),
+                    ),
+                  );
                 },
               ),
               ListTile(
                 leading: Icon(Icons.business),
                 title: Text('Xem thông tin công ty'),
                 onTap: () {
-                  Navigator.pop(context); // Đóng modal
-                  print('Xem thông tin công ty');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => InfoCompanyScreen(
+                            userId: appliedJob['employer_id']['_id'],
+                          ),
+                    ),
+                  );
                 },
               ),
               ListTile(

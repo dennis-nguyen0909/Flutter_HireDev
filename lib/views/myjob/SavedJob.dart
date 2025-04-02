@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hiredev/components/JobCard/JobCard.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/services/apiServices.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
-import 'package:hiredev/views/myjob/JobCard.dart';
 import 'package:provider/provider.dart';
 
 class SavedJob extends StatefulWidget {
@@ -58,6 +58,7 @@ class _SavedJobState extends State<SavedJob> {
 
   @override
   Widget build(BuildContext context) {
+    print("savedJobs[index]['job_id'] ${savedJobs[0]['job_id']}");
     return RefreshIndicator(
       onRefresh: () async {
         await getRecentSavedJob(1, 10, {});
@@ -71,7 +72,7 @@ class _SavedJobState extends State<SavedJob> {
                 padding: EdgeInsets.all(10),
                 itemCount: savedJobs.length,
                 itemBuilder: (context, index) {
-                  return JobCard(savedJobs[index], false);
+                  return JobCard(job: savedJobs[index]['job_id']);
                 },
               ),
     );
