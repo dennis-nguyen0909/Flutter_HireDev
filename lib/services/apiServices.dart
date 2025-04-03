@@ -98,16 +98,25 @@ class ApiService {
     }
   }
 
-  Future<dynamic> delete(String url, {String? token}) async {
+  Future<dynamic> delete(
+    String url,
+    Map<String, dynamic> data, {
+    String? token,
+  }) async {
     final uri = Uri.parse(url);
     final headers = <String, String>{};
 
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
+    headers['Content-Type'] = 'application/json';
 
     try {
-      final response = await http.delete(uri, headers: headers);
+      final response = await http.delete(
+        uri,
+        headers: headers,
+        body: json.encode(data),
+      );
       return json.decode(response.body);
     } catch (e) {
       throw ApiException(e.toString());

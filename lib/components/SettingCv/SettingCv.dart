@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -6,6 +7,7 @@ import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/screens/SettingResume/SettingResume.dart';
 import 'package:hiredev/services/apiServices.dart';
+import 'package:hiredev/services/userServices.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,18 +53,30 @@ class SettingCv extends StatefulWidget {
 }
 
 class _SettingCvState extends State<SettingCv> {
-  int _profileCompletion = 0;
+  late UserProvider userProvider;
+  late UserModel? user;
+  bool isProfilePrivacy = true; // Initialize with a default value
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    userProvider = Provider.of<UserProvider>(context, listen: true);
+    user = userProvider.user;
+    isProfilePrivacy = user?.isProfilePrivacy ?? true;
+  }
+
   final SecureStorageService secureStorageService = SecureStorageService();
-  bool _isLoading = false;
   List<CvModel> _cvs = [];
   bool _loadingCvs = false;
+  bool _isLoading = false;
   Map<String, dynamic> meta = {};
+  int _profileCompletion = 0;
 
   @override
   void initState() {
     super.initState();
     profileCompletion();
-    getMyCv(1, 10, {});
+    getMyCv(1, 5, {});
   }
 
   Future<void> profileCompletion() async {
@@ -144,30 +158,30 @@ class _SettingCvState extends State<SettingCv> {
           margin: EdgeInsets.symmetric(vertical: 8.0),
           child: _buildListTile(
             title: 'Bật cho phép tìm kiếm hồ sơ',
-            trailing: Switch(
-              value: true, // Thay đổi giá trị tùy theo trạng thái
-              onChanged: (value) {
-                // Xử lý sự kiện thay đổi trạng thái
+            trailing: CupertinoSwitch(
+              value: isProfilePrivacy,
+              onChanged: (value) async {
+                setState(() {
+                  isProfilePrivacy = value;
+                });
+                print('value $value');
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
+                final UserModel? user = userProvider.user;
+                final response = await UserServices.updateUser({
+                  'is_profile_privacy': value,
+                  "id": user?.id,
+                }, context: context);
+                print('response $response');
               },
+              activeColor: Color(0xFFDA4156),
+              trackColor: Colors.grey.shade300,
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          margin: EdgeInsets.symmetric(vertical: 8.0),
-          child: _buildListTile(
-            title: 'Bật và cho phép nhà tuyển dụng xem hồ sơ của bạn',
-            trailing: Switch(
-              value: true, // Thay đổi giá trị tùy theo trạng thái
-              onChanged: (value) {
-                // Xử lý sự kiện thay đổi trạng thái
-              },
-            ),
-          ),
-        ),
+
         Padding(
           padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
           child: Text(
