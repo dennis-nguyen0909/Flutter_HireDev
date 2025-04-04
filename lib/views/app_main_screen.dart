@@ -88,6 +88,7 @@ class _StateAppMainScreen extends State<AppMainScreen> {
         unselectedItemColor: Colors.black,
         onTap: _onItemTapped,
         showUnselectedLabels: true,
+        backgroundColor: Colors.white,
       ),
     );
   }

@@ -72,7 +72,10 @@ class _SavedJobState extends State<SavedJob> {
                 padding: EdgeInsets.all(10),
                 itemCount: savedJobs.length,
                 itemBuilder: (context, index) {
-                  return JobCard(job: savedJobs[index]['job_id']);
+                  return JobCard(
+                    job: savedJobs[index]!['job_id'],
+                    isFavorite: true,
+                  );
                 },
               ),
     );

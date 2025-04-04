@@ -32,6 +32,7 @@ class _AccountScreenState extends State<AccountScreen> {
     final user = context.watch<UserProvider>().user;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -181,7 +182,6 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               Container(
                 padding: const EdgeInsets.all(0.0),
-
                 child: Column(
                   children: <Widget>[
                     _buildListItem(context, Icons.settings, 'Cài đặt', () {
@@ -213,7 +213,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           _logout();
                         },
                         style: ElevatedButton.styleFrom(
-                          // backgroundColor: Color(),
+                          backgroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),

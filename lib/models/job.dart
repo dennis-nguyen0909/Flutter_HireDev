@@ -43,40 +43,103 @@ class Job {
     required this.createdAt,
   });
   factory Job.fromJson(Map<String, dynamic> json) {
-    return Job(
-      id: json['_id'],
-      user: User.fromJson(json['user_id']),
-      title: json['title'],
-      city: City.fromJson(json['city_id']),
-      district: District.fromJson(json['district_id']),
-      contractType: ContractType.fromJson(json['job_contract_type']),
-      jobType: JobType.fromJson(json['job_type']),
-      skillNames: List<String>.from(json['skill_name']),
-      level: Level.fromJson(json['level']),
-      expireDate: DateTime.tryParse(json['expire_date']) ?? DateTime.now(),
-      moneyType: MoneyType.fromJson(json['type_money']),
-      countApply: json['count_apply'] ?? 0,
-      isNegotiable: json['is_negotiable'] ?? false,
-      skills:
-          (json['skills'] as List)
-              .map((skill) => Skill.fromJson(skill))
-              .toList(),
-      isActive: json['is_active'] ?? false,
-      isExpired: json['is_expired'] ?? false,
-      candidateIds: List<String>.from(json['candidate_ids'] ?? []),
-
-      // Kiểm tra null cho 'salary_range_max' và 'salary_range_min'
-      salaryRangeMax:
-          json['salary_range_max'] != null
-              ? (json['salary_range_max'] as num).toInt()
-              : 0, // Giá trị mặc định nếu null
-      salaryRangeMin:
-          json['salary_range_min'] != null
-              ? (json['salary_range_min'] as num).toInt()
-              : 0, // Giá trị mặc định nếu null
-
-      createdAt: DateTime.tryParse(json['createdAt']) ?? DateTime.now(),
-    );
+    try {
+      return Job(
+        id: json['_id'] ?? '',
+        user:
+            json['user_id'] is Map<String, dynamic>
+                ? User.fromJson(json['user_id'])
+                : User(id: '', avatarCompany: '', companyName: ''),
+        title: json['title'] ?? '',
+        city:
+            json['city_id'] is Map<String, dynamic>
+                ? City.fromJson(json['city_id'])
+                : City(id: '', name: ''),
+        district:
+            json['district_id'] is Map<String, dynamic>
+                ? District.fromJson(json['district_id'])
+                : District(id: '', name: ''),
+        contractType:
+            json['job_contract_type'] is Map<String, dynamic>
+                ? ContractType.fromJson(json['job_contract_type'])
+                : ContractType(id: '', name: '', key: ''),
+        jobType:
+            json['job_type'] is Map<String, dynamic>
+                ? JobType.fromJson(json['job_type'])
+                : JobType(id: '', name: '', key: ''),
+        skillNames:
+            json['skill_name'] is List
+                ? List<String>.from(json['skill_name'])
+                : [],
+        level:
+            json['level'] is Map<String, dynamic>
+                ? Level.fromJson(json['level'])
+                : Level(id: '', name: '', key: ''),
+        expireDate:
+            DateTime.tryParse(json['expire_date'] ?? '') ?? DateTime.now(),
+        moneyType:
+            json['type_money'] is Map<String, dynamic>
+                ? MoneyType.fromJson(json['type_money'])
+                : MoneyType(id: '', code: '', symbol: ''),
+        countApply: json['count_apply'] ?? 0,
+        isNegotiable: json['is_negotiable'] ?? false,
+        skills:
+            json['skills'] is List
+                ? (json['skills'] as List)
+                    .where((skill) => skill is Map<String, dynamic>)
+                    .map((skill) => Skill.fromJson(skill))
+                    .toList()
+                : [],
+        isActive: json['is_active'] ?? false,
+        isExpired: json['is_expired'] ?? false,
+        candidateIds:
+            json['candidate_ids'] is List
+                ? List<String>.from(json['candidate_ids'])
+                : [],
+        salaryRangeMax:
+            json['salary_range_max'] != null
+                ? (json['salary_range_max'] is num
+                    ? (json['salary_range_max'] as num).toInt()
+                    : 0)
+                : 0,
+        salaryRangeMin:
+            json['salary_range_min'] != null
+                ? (json['salary_range_min'] is num
+                    ? (json['salary_range_min'] as num).toInt()
+                    : 0)
+                : 0,
+        createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      );
+    } catch (e) {
+      print("Error parsing Job: $e");
+      // Return a default Job object in case of error
+      return Job(
+        id: '',
+        user: User(id: '', avatarCompany: '', companyName: ''),
+        title: '',
+        city: City(id: '', name: ''),
+        district: District(id: '', name: ''),
+        contractType: ContractType(id: '', name: '', key: ''),
+        jobType: JobType(id: '', name: '', key: ''),
+        skillNames: [],
+        level: Level(id: '', name: '', key: ''),
+        expireDate: DateTime.now(),
+        moneyType: MoneyType(id: '', code: '', symbol: ''),
+        countApply: 0,
+        isNegotiable: false,
+        skills: [],
+        isActive: false,
+        isExpired: false,
+        candidateIds: [],
+        salaryRangeMax: 0,
+        salaryRangeMin: 0,
+        createdAt: DateTime.now(),
+      );
+    }
+  }
+  @override
+  String toString() {
+    return "Job(id: $id, title: $title, city: $city, district: $district, contractType: $contractType, jobType: $jobType, skillNames: $skillNames, level: $level, expireDate: $expireDate, moneyType: $moneyType, countApply: $countApply, isNegotiable: $isNegotiable, skills: $skills, isActive: $isActive, isExpired: $isExpired, candidateIds: $candidateIds, salaryRangeMax: $salaryRangeMax, salaryRangeMin: $salaryRangeMin, createdAt: $createdAt)";
   }
 }
 
@@ -93,9 +156,9 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'],
-      avatarCompany: json['avatar_company'],
-      companyName: json['company_name'],
+      id: json['_id'] ?? '',
+      avatarCompany: json['avatar_company'] ?? '',
+      companyName: json['company_name'] ?? '',
     );
   }
 }
@@ -107,7 +170,7 @@ class City {
   City({required this.id, required this.name});
 
   factory City.fromJson(Map<String, dynamic> json) {
-    return City(id: json['_id'], name: json['name']);
+    return City(id: json['_id'] ?? '', name: json['name'] ?? '');
   }
 }
 
@@ -118,7 +181,7 @@ class District {
   District({required this.id, required this.name});
 
   factory District.fromJson(Map<String, dynamic> json) {
-    return District(id: json['_id'], name: json['name']);
+    return District(id: json['_id'] ?? '', name: json['name'] ?? '');
   }
 }
 
@@ -130,7 +193,11 @@ class ContractType {
   ContractType({required this.id, required this.name, required this.key});
 
   factory ContractType.fromJson(Map<String, dynamic> json) {
-    return ContractType(id: json['_id'], name: json['name'], key: json['key']);
+    return ContractType(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      key: json['key'] ?? '',
+    );
   }
 }
 
@@ -142,7 +209,11 @@ class JobType {
   JobType({required this.id, required this.name, required this.key});
 
   factory JobType.fromJson(Map<String, dynamic> json) {
-    return JobType(id: json['_id'], name: json['name'], key: json['key']);
+    return JobType(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      key: json['key'] ?? '',
+    );
   }
 }
 
@@ -154,7 +225,11 @@ class Level {
   Level({required this.id, required this.name, required this.key});
 
   factory Level.fromJson(Map<String, dynamic> json) {
-    return Level(id: json['_id'], name: json['name'], key: json['key']);
+    return Level(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      key: json['key'] ?? '',
+    );
   }
 }
 
@@ -167,9 +242,9 @@ class MoneyType {
 
   factory MoneyType.fromJson(Map<String, dynamic> json) {
     return MoneyType(
-      id: json['_id'],
-      code: json['code'],
-      symbol: json['symbol'],
+      id: json['_id'] ?? '',
+      code: json['code'] ?? '',
+      symbol: json['symbol'] ?? '',
     );
   }
 }
@@ -181,6 +256,6 @@ class Skill {
   Skill({required this.id, required this.name});
 
   factory Skill.fromJson(Map<String, dynamic> json) {
-    return Skill(id: json['_id'], name: json['name']);
+    return Skill(id: json['_id'] ?? '', name: json['name'] ?? '');
   }
 }

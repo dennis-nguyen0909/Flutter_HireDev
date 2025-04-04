@@ -9,7 +9,11 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: MyJobScreen());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(scaffoldBackgroundColor: Colors.white),
+      home: MyJobScreen(),
+    );
   }
 }
 
@@ -19,6 +23,7 @@ class MyJobScreen extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
           flexibleSpace: Container(
             decoration: BoxDecoration(

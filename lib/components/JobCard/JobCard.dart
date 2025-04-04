@@ -4,11 +4,12 @@ import 'package:hiredev/models/job.dart';
 import 'package:hiredev/utils/currency.dart';
 
 class JobCard extends StatefulWidget {
-  final Job job;
+  final dynamic job;
   final Color backgroundColor;
   final bool isBorder;
   final Color borderColor;
   final bool isDisplayHeart;
+  final bool isFavorite;
 
   JobCard({
     required this.job,
@@ -16,6 +17,7 @@ class JobCard extends StatefulWidget {
     this.isBorder = true,
     this.borderColor = Colors.grey,
     this.isDisplayHeart = true,
+    this.isFavorite = false,
   });
 
   @override
@@ -24,19 +26,137 @@ class JobCard extends StatefulWidget {
 
 class JobCardState extends State<JobCard> {
   void onPressDetail() {
+    String jobId =
+        widget.job is Map
+            ? (widget.job as Map)['job_id']['_id'] ??
+                (widget.job as Map)['_id'] ??
+                ''
+            : widget.job.id;
+    String jobTitle =
+        widget.job is Map
+            ? (widget.job as Map)['job_id']['title'] ??
+                (widget.job as Map)['title'] ??
+                ''
+            : widget.job.title;
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) =>
-                JobDetailScreen(id: widget.job.id, title: widget.job.title),
+        builder: (context) => JobDetailScreen(id: jobId, title: jobTitle),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    print(widget.job);
+    print("duyjob ${(widget.job)}");
+
+    // Helper functions to get data regardless of job type
+    String getAvatarCompany() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map &&
+            (widget.job as Map)['job_id'].containsKey('user_id')) {
+          return (widget.job as Map)['job_id']['user_id']['avatar_company'] ??
+              '';
+        } else if ((widget.job as Map).containsKey('user_id')) {
+          return (widget.job as Map)['user_id']['avatar_company'] ?? '';
+        }
+        return '';
+      }
+      return widget.job.user.avatarCompany;
+    }
+
+    String getJobTitle() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map) {
+          return (widget.job as Map)['job_id']['title'] ?? '';
+        } else if ((widget.job as Map).containsKey('title')) {
+          return (widget.job as Map)['title'] ?? '';
+        }
+        return '';
+      }
+      return widget.job.title;
+    }
+
+    String getCompanyName() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map &&
+            (widget.job as Map)['job_id'].containsKey('user_id')) {
+          return (widget.job as Map)['job_id']['user_id']['company_name'] ?? '';
+        } else if ((widget.job as Map).containsKey('user_id')) {
+          return (widget.job as Map)['user_id']['company_name'] ?? '';
+        }
+        return '';
+      }
+      return widget.job.user.companyName;
+    }
+
+    bool getIsNegotiable() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map) {
+          return (widget.job as Map)['job_id']['is_negotiable'] ?? false;
+        }
+        return (widget.job as Map)['is_negotiable'] ?? false;
+      }
+      return widget.job.isNegotiable;
+    }
+
+    String getDistrictName() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map &&
+            (widget.job as Map)['job_id'].containsKey('district_id')) {
+          return (widget.job as Map)['job_id']['district_id']['name'] ?? '';
+        } else if ((widget.job as Map).containsKey('district_id')) {
+          return (widget.job as Map)['district_id']['name'] ?? '';
+        }
+        return '';
+      }
+      return widget.job.district.name;
+    }
+
+    int getSalaryMin() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map) {
+          return ((widget.job as Map)['job_id']['salary_range_min'] ?? 0)
+              as int;
+        }
+        return ((widget.job as Map)['salary_range_min'] ?? 0) as int;
+      }
+      return widget.job.salaryRangeMin;
+    }
+
+    int getSalaryMax() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map) {
+          return ((widget.job as Map)['job_id']['salary_range_max'] ?? 0)
+              as int;
+        }
+        return ((widget.job as Map)['salary_range_max'] ?? 0) as int;
+      }
+      return widget.job.salaryRangeMax;
+    }
+
+    String getMoneyTypeCode() {
+      if (widget.job is Map) {
+        if ((widget.job as Map).containsKey('job_id') &&
+            (widget.job as Map)['job_id'] is Map &&
+            (widget.job as Map)['job_id'].containsKey('money_type')) {
+          return (widget.job as Map)['job_id']['money_type']['code'] ?? 'USD';
+        } else if ((widget.job as Map).containsKey('money_type')) {
+          return (widget.job as Map)['money_type']['code'] ?? 'USD';
+        }
+        return 'USD';
+      }
+      return widget.job.moneyType.code;
+    }
+
     return GestureDetector(
       onTap: onPressDetail,
       child: Container(
@@ -61,10 +181,20 @@ class JobCardState extends State<JobCard> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Image.network(
-                      widget.job.user.avatarCompany,
+                      getAvatarCompany(),
                       width: 60,
                       height: 60,
                       fit: BoxFit.contain,
+                      errorBuilder:
+                          (context, error, stackTrace) => Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: Icon(
+                              Icons.business,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                     ),
                     SizedBox(width: 20),
                     Column(
@@ -72,11 +202,12 @@ class JobCardState extends State<JobCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.job.title,
+                          getJobTitle(),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
+                        Text(getCompanyName()),
                         Text(
-                          widget.job.user.companyName,
+                          getCompanyName(),
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                       ],
@@ -91,7 +222,7 @@ class JobCardState extends State<JobCard> {
                       children: [
                         Row(
                           children: [
-                            widget.job.isNegotiable
+                            getIsNegotiable()
                                 ? Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -130,7 +261,7 @@ class JobCardState extends State<JobCard> {
                                     ), // Optional: Make the corners rounded
                                   ),
                                   child: Text(
-                                    "${Currency.formatCurrencyWithSymbol(widget.job.salaryRangeMin, widget.job.moneyType.code)} - ${Currency.formatCurrencyWithSymbol(widget.job.salaryRangeMax, widget.job.moneyType.code)}",
+                                    "${Currency.formatCurrencyWithSymbol(getSalaryMin(), getMoneyTypeCode())} - ${Currency.formatCurrencyWithSymbol(getSalaryMax(), getMoneyTypeCode())}",
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.normal,
@@ -158,7 +289,7 @@ class JobCardState extends State<JobCard> {
                                 ), // Optional: Make the corners rounded
                               ),
                               child: Text(
-                                widget.job.district.name,
+                                getDistrictName(),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.normal,

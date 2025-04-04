@@ -154,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     print(_jobs.map((e) => e.title).toList()); // In ra tiêu đề các job
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Nội dung chính của màn hình
