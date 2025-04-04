@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/components/Companies/Companies.dart';
 import 'package:hiredev/components/SettingCv/SettingCv.dart';
@@ -8,6 +9,7 @@ import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/screens/AccountManagement/AccountManagement.dart';
 import 'package:hiredev/screens/ProfileScreen/ProfileScreen.dart';
 import 'package:hiredev/screens/login/Login.dart';
+import 'package:hiredev/services/apiServices.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
 import 'package:hiredev/views/myjob/MyJobScreen.dart';
 import 'package:provider/provider.dart';
@@ -17,8 +19,72 @@ class AccountScreen extends StatefulWidget {
   _AccountScreenState createState() => _AccountScreenState();
 }
 
-class _AccountScreenState extends State<AccountScreen> {
+class _AccountScreenState extends State<AccountScreen>
+    with SingleTickerProviderStateMixin {
   final SecureStorageService secureStorageService = SecureStorageService();
+  bool _isLoading = false;
+  int _profileCompletion = 0;
+  late AnimationController _animationController;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0, end: 0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      profileCompletion();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> profileCompletion() async {
+    final user = context.read<UserProvider>().user;
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      final response = await ApiService().get(
+        dotenv.get('API_URL') + 'users/${user?.id}/profile-completion',
+        token: await secureStorageService.getRefreshToken(),
+      );
+      print(response);
+      if (response['statusCode'] == 200) {
+        setState(() {
+          _profileCompletion = response['data'];
+          // Update the animation target and start it
+          _progressAnimation = Tween<double>(
+            begin: 0,
+            end: _profileCompletion / 100,
+          ).animate(
+            CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeInOut,
+            ),
+          );
+          _animationController.forward();
+        });
+      }
+    } catch (e) {
+      print(e);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _logout() async {
     await secureStorageService.removeTokens();
@@ -85,17 +151,45 @@ class _AccountScreenState extends State<AccountScreen> {
                 ),
                 child: Row(
                   children: <Widget>[
-                    user?.avatar != null
-                        ? ClipRRect(
-                          borderRadius: BorderRadius.circular(50),
-                          child: Image.network(
-                            user?.avatar ?? '',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 110,
+                          height: 110,
+                          child: AnimatedBuilder(
+                            animation: _progressAnimation,
+                            builder: (context, child) {
+                              return CircularProgressIndicator(
+                                value: _progressAnimation.value,
+                                strokeWidth: 5,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFDA4156),
+                                ),
+                              );
+                            },
                           ),
-                        )
-                        : SizedBox(width: 16.0),
+                        ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child:
+                              user?.avatar != null
+                                  ? Image.network(
+                                    user?.avatar ?? '',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                                  : Image.asset(
+                                    'assets/avatar_default.jpg',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                        ),
+                      ],
+                    ),
                     SizedBox(width: 16.0),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,6 +276,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               Container(
                 padding: const EdgeInsets.all(0.0),
+
                 child: Column(
                   children: <Widget>[
                     _buildListItem(context, Icons.settings, 'Cài đặt', () {
@@ -213,7 +308,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           _logout();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          // backgroundColor: Color(),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),

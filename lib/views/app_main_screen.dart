@@ -35,14 +35,14 @@ class _StateAppMainScreen extends State<AppMainScreen> {
     ];
 
     _navigationItems = const <BottomNavigationBarItem>[
-      BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: "My Job"),
-      BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
       BottomNavigationBarItem(
         icon: Icon(Icons.notifications_outlined),
-        label: "Notification",
+        label: '',
       ),
-      BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: "Account"),
+      BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: ''),
     ];
   }
 
@@ -65,12 +65,12 @@ class _StateAppMainScreen extends State<AppMainScreen> {
     if (user?.roleName == 'EMPLOYER') {
       activeScreens = [HomeScreen(), Notifications(), AccountScreen()];
       activeItems = const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
         BottomNavigationBarItem(
           icon: Icon(Icons.notifications_outlined),
-          label: "Notification",
+          label: '',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: "Account"),
+        BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: ''),
       ];
 
       // Đảm bảo selectedIndex không vượt quá số lượng tab
@@ -89,6 +89,7 @@ class _StateAppMainScreen extends State<AppMainScreen> {
         onTap: _onItemTapped,
         showUnselectedLabels: true,
         backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }

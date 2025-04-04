@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hiredev/components/Section/Section.dart';
+import 'package:hiredev/modals/EducationModal.dart';
 import 'package:hiredev/modals/ModalBasicInformation.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
@@ -12,6 +14,11 @@ import 'package:hiredev/utils/CameraSystem.dart';
 import 'package:hiredev/utils/ImagePicker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:hiredev/modals/PrizeModal.dart';
+import 'package:hiredev/modals/CourseModal.dart';
+import 'package:hiredev/modals/ProjectModal.dart';
+import 'package:hiredev/modals/ExperienceModal.dart';
+import 'package:hiredev/modals/CertificateModal.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -515,9 +522,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'Hồ sơ ứng tuyển',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                child: SectionComponent(
+                  title: 'Học vấn',
+                  description:
+                      'Thể hiện những kiến thức học vấn bạn có cho công việc của mình.',
+                  modalContent: Container(
+                    height: MediaQuery.of(context).size.height * 0.94,
+                    child: EducationModal(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SectionComponent(
+                  title: 'Giải thưởng',
+                  description:
+                      'Thêm các giải thưởng và thành tích bạn đã đạt được.',
+                  modalContent: Container(
+                    height: MediaQuery.of(context).size.height * 0.94,
+                    child: PrizeModal(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SectionComponent(
+                  title: 'Khóa học',
+                  description:
+                      'Thêm các khóa học và chương trình đào tạo bạn đã tham gia.',
+                  modalContent: Container(
+                    height: MediaQuery.of(context).size.height * 0.94,
+                    child: CourseModal(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SectionComponent(
+                  title: 'Dự án',
+                  description: 'Thêm các dự án bạn đã tham gia và đóng góp.',
+                  modalContent: Container(
+                    height: MediaQuery.of(context).size.height * 0.94,
+                    child: ProjectModal(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SectionComponent(
+                  title: 'Kinh nghiệm làm việc',
+                  description: 'Thêm kinh nghiệm làm việc của bạn.',
+                  modalContent: Container(
+                    height: MediaQuery.of(context).size.height * 0.94,
+                    child: ExperienceModal(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SectionComponent(
+                  title: 'Chứng chỉ',
+                  description:
+                      'Thêm các chứng chỉ và chứng nhận bạn đã đạt được.',
+                  modalContent: Container(
+                    height: MediaQuery.of(context).size.height * 0.94,
+                    child: CertificateModal(),
+                  ),
                 ),
               ),
             ],

@@ -21,11 +21,9 @@ class DistrictModel {
       code: json['code'],
       codename: json['codename'],
       wards:
-          json['wards'] != null
-              ? (json['wards'] as List)
-                  .map((ward) => WardModel.fromJson(ward))
-                  .toList()
-              : null,
+          (json['wards'] as List)
+              .map((ward) => WardModel.fromJson(ward))
+              .toList(),
     );
   }
 
