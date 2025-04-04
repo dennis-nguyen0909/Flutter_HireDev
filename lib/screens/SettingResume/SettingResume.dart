@@ -30,8 +30,7 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    userProvider = Provider.of<UserProvider>(context, listen: false);
-    user = userProvider.user;
+    user = context.watch<UserProvider>().user;
     isProfilePrivacy = user?.isProfilePrivacy ?? true;
   }
 

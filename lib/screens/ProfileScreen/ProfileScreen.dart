@@ -1,8 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hiredev/modals/ModalBasicInformation.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/services/fileService.dart';
 import 'package:hiredev/services/profileServices.dart';
+import 'package:hiredev/services/userServices.dart';
+import 'package:hiredev/utils/CameraSystem.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -24,6 +31,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     user = userProvider.user;
     getJobAppliedOfCandidate();
     getJobSavedOfCandidate();
+  }
+
+  final CameraSystem _cameraService = CameraSystem();
+
+  XFile? _image;
+  final ImagePicker _picker = ImagePicker(); // Khởi tạo ImagePicker
+
+  // Hàm chụp ảnh
+  Future<void> _takePhoto() async {
+    final XFile? image = await _cameraService.takePhoto(context);
+
+    setState(() {
+      _image = image;
+    });
   }
 
   Future<void> getJobAppliedOfCandidate() async {
@@ -75,6 +96,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Hàm chọn ảnh từ thư viện
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Không chọn ảnh')));
+        return;
+      }
+
+      print("image: $image");
+      final response = await FileService.uploadFile(image.path);
+      if (response == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Không thể tải ảnh lên')));
+        return;
+      }
+
+      final parsedResponse = jsonDecode(response.toString());
+      if (parsedResponse['statusCode'] == 201) {
+        final updateUser = await UserServices.updateUser({
+          'id': user?.id,
+          'avatar': parsedResponse['data']['url'],
+        }, context: context);
+        if (updateUser['statusCode'] == 200) {
+          setState(() {
+            _image = image;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cập nhật ảnh đại diện thành công')),
+          );
+        } else {
+          print("updateUser: ${updateUser['message']}");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cập nhật ảnh đại diện thất bại')),
+          );
+        }
+      } else {
+        print("responseImage: $response");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Tải ảnh lên thất bại')));
+      }
+    } catch (e) {
+      print("Error picking image: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Có lỗi xảy ra khi chọn ảnh')));
+    }
+  }
+
   void _showBasicInfoModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -87,6 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<UserProvider>().user;
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
@@ -131,18 +206,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    user?.avatar != null
-                        ? ClipRRect(
+                    Stack(
+                      children: [
+                        ClipRRect(
                           borderRadius: BorderRadius.circular(40),
-                          child: Image.network(
-                            user?.avatar ?? '',
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.contain,
+                          child:
+                              user?.avatar != null
+                                  ? Image.network(
+                                    user?.avatar ?? '',
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.cover,
+                                  )
+                                  : Image.asset(
+                                    'assets/avatar_default.jpg',
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.cover,
+                                  ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Container(
+                                    padding: EdgeInsets.all(16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ListTile(
+                                          leading: Icon(Icons.camera_alt),
+                                          title: Text('Chụp ảnh từ camera'),
+                                          onTap: () {
+                                            _takePhoto();
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: Icon(Icons.photo_library),
+                                          title: Text('Chọn ảnh từ thư viện'),
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                            await _pickImage();
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: Icon(Icons.close),
+                                          title: Text('Đóng'),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFDA4156),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
                           ),
-                        )
-                        : SizedBox(width: 80),
-                    SizedBox(width: 16),
+                        ),
+                      ],
+                    ),
                     Expanded(
                       flex: 1,
                       child: Column(
@@ -255,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     //   style: TextStyle(fontSize: 16, color: Colors.grey),
                     // ),
                     Text(
-                      '${user?.totalExperienceYears} năm kinh nghiệm',
+                      '${user?.totalExperienceYears != null ? user?.totalExperienceYears : 0} năm kinh nghiệm',
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     SizedBox(height: 8),

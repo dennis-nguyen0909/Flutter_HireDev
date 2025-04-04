@@ -83,4 +83,47 @@ class FileService {
     );
     return response;
   }
+
+  static Future<String?> uploadFile(String filePath) async {
+    SecureStorageService secureStorageService = SecureStorageService();
+    try {
+      final url = Uri.parse(dotenv.get('API_URL') + 'media/upload-file');
+      final token = await secureStorageService.getRefreshToken();
+      final request = http.MultipartRequest('POST', url);
+
+      // Add authorization header
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      // Get file information
+      final file = File(filePath);
+      final fileName = file.path.split('/').last;
+
+      // Add file to request
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file', // Field name for the file upload
+          filePath,
+          filename: fileName,
+        ),
+      );
+
+      // Send request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        return response.body;
+      } else {
+        return null; // Or handle the error appropriately
+      }
+    } catch (e) {
+      print('Error during file upload: $e');
+      return null;
+    }
+  }
 }

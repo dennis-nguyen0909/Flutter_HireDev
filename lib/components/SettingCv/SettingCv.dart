@@ -79,8 +79,7 @@ class _SettingCvState extends State<SettingCv> {
   }
 
   Future<void> profileCompletion() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final UserModel? user = userProvider.user;
+    final user = context.watch<UserProvider>().user;
     try {
       setState(() {
         _isLoading = true;
@@ -105,8 +104,7 @@ class _SettingCvState extends State<SettingCv> {
   }
 
   Future<void> getMyCv(current, pageSize, queryParams) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final UserModel? user = userProvider.user;
+    final user = context.watch<UserProvider>().user;
 
     setState(() {
       _loadingCvs = true;
@@ -164,11 +162,6 @@ class _SettingCvState extends State<SettingCv> {
                   isProfilePrivacy = value;
                 });
                 print('value $value');
-                final userProvider = Provider.of<UserProvider>(
-                  context,
-                  listen: false,
-                );
-                final UserModel? user = userProvider.user;
                 final response = await UserServices.updateUser({
                   'is_profile_privacy': value,
                   "id": user?.id,
