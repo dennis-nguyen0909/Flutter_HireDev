@@ -86,7 +86,7 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print('json: ${json}');
+    print("json: ${json['city_id']}");
     var itemsJson = json;
     if (itemsJson == null) {
       return UserModel();
@@ -141,6 +141,6 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, email: $email, fullName: $fullName, roleName: $roleName, avatar: $avatar, phone: $phone, address: $address, gender: $gender, isActive: $isActive, companyName: $companyName, description: $description)';
+    return 'UserModel(id: $id, email: $email, fullName: $fullName, roleName: $roleName, avatar: $avatar, phone: $phone, address: $address, gender: $gender, isActive: $isActive, companyName: $companyName, description: $description, cityId: $cityId, districtId: $districtId, wardId: $wardId, nameCity: $nameCity, nameDistrict: $nameDistrict, nameWard: $nameWard)';
   }
 }

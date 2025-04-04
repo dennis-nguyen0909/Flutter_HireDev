@@ -5,13 +5,13 @@ class DistrictModel {
   final String name;
   final int code;
   final String codename;
-  final List<WardModel> wards;
+  final List<WardModel>? wards;
   DistrictModel({
     required this.id,
     required this.name,
     required this.code,
     required this.codename,
-    required this.wards,
+    this.wards,
   });
 
   factory DistrictModel.fromJson(Map<String, dynamic> json) {
@@ -21,9 +21,11 @@ class DistrictModel {
       code: json['code'],
       codename: json['codename'],
       wards:
-          (json['wards'] as List)
-              .map((ward) => WardModel.fromJson(ward))
-              .toList(),
+          json['wards'] != null
+              ? (json['wards'] as List)
+                  .map((ward) => WardModel.fromJson(ward))
+                  .toList()
+              : null,
     );
   }
 
@@ -33,7 +35,7 @@ class DistrictModel {
       'name': name,
       'code': code,
       'codename': codename,
-      'wards': wards.map((ward) => ward.toJson()).toList(),
+      'wards': wards?.map((ward) => ward.toJson()).toList(),
     };
   }
 }

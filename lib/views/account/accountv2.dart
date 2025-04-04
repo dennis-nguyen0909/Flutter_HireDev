@@ -28,9 +28,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final UserModel? user = userProvider.user;
-    print(user?.fullName);
+    final user = context.watch<UserProvider>().user;
 
     return Scaffold(
       appBar: AppBar(
@@ -85,21 +83,23 @@ class _AccountScreenState extends State<AccountScreen> {
                 ),
                 child: Row(
                   children: <Widget>[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: Image.network(
-                        user?.avatar ?? '',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    user?.avatar != null
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(50),
+                          child: Image.network(
+                            user?.avatar ?? '',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                        : SizedBox(width: 16.0),
                     SizedBox(width: 16.0),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          user?.fullName ?? '',
+                          user?.fullName ?? '123',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
@@ -110,7 +110,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           style: TextStyle(color: Colors.black),
                         ),
                         Text(
-                          '${user?.totalExperienceYears} năm kinh nghiệm',
+                          '${user?.totalExperienceYears != null ? user?.totalExperienceYears : 0} năm kinh nghiệm',
                           style: TextStyle(color: Colors.black),
                         ),
                         GestureDetector(

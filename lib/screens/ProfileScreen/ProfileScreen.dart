@@ -131,15 +131,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(40),
-                      child: Image.network(
-                        user?.avatar ?? '',
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+                    user?.avatar != null
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(40),
+                          child: Image.network(
+                            user?.avatar ?? '',
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.contain,
+                          ),
+                        )
+                        : SizedBox(width: 80),
                     SizedBox(width: 16),
                     Expanded(
                       flex: 1,

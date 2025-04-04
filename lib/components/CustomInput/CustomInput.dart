@@ -8,6 +8,7 @@ class CustomInput extends StatelessWidget {
   final TextEditingController controller;
   final bool required;
   final InputType type; // Thêm tùy chọn type
+  final bool disabled; // Thêm tùy chọn disabled
 
   CustomInput({
     required this.label,
@@ -15,6 +16,7 @@ class CustomInput extends StatelessWidget {
     required this.controller,
     this.required = false,
     this.type = InputType.input, // Giá trị mặc định là input
+    this.disabled = false, // Giá trị mặc định là không bị vô hiệu hóa
   });
 
   @override
@@ -35,6 +37,7 @@ class CustomInput extends StatelessWidget {
               ? TextField(
                 // Hiển thị TextField nếu type là input
                 controller: controller,
+                enabled: !disabled, // Vô hiệu hóa nếu disabled = true
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: hint,
@@ -42,11 +45,17 @@ class CustomInput extends StatelessWidget {
                     vertical: 8.0,
                     horizontal: 12.0,
                   ),
+                  fillColor:
+                      disabled
+                          ? Colors.grey[200]
+                          : Colors.white, // Màu nền khi bị vô hiệu hóa
+                  filled: true,
                 ),
               )
               : TextField(
                 // Hiển thị TextField với maxLines nếu type là textarea
                 controller: controller,
+                enabled: !disabled, // Vô hiệu hóa nếu disabled = true
                 maxLines: 5, // Đặt maxLines cho textarea
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
@@ -55,6 +64,11 @@ class CustomInput extends StatelessWidget {
                     vertical: 8.0,
                     horizontal: 12.0,
                   ),
+                  fillColor:
+                      disabled
+                          ? Colors.grey[200]
+                          : Colors.white, // Màu nền khi bị vô hiệu hóa
+                  filled: true,
                 ),
               ),
         ],

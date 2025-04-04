@@ -60,8 +60,7 @@ class _SettingCvState extends State<SettingCv> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    userProvider = Provider.of<UserProvider>(context, listen: true);
-    user = userProvider.user;
+    user = context.watch<UserProvider>().user;
     isProfilePrivacy = user?.isProfilePrivacy ?? true;
   }
 
@@ -289,6 +288,7 @@ class _SettingCvState extends State<SettingCv> {
                                                 ),
                                           ),
                                         );
+                                        Navigator.pop(context);
                                       },
                                     ),
                                     ListTile(

@@ -5,12 +5,14 @@ class CustomSelectOption<T> extends StatefulWidget {
   final List<DropdownMenuItem<T>> items;
   final T? value;
   final ValueChanged<T?> onChanged;
+  final T? initialValue;
 
   CustomSelectOption({
     required this.label,
     required this.items,
     required this.onChanged,
     this.value,
+    this.initialValue,
   });
 
   @override
@@ -24,6 +26,9 @@ class _CustomSelectOptionState<T> extends State<CustomSelectOption<T>> {
   void initState() {
     super.initState();
     _selectedValue = widget.value;
+    if (widget.initialValue != null) {
+      _selectedValue = widget.initialValue;
+    }
   }
 
   @override
