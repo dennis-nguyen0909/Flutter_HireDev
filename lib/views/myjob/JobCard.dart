@@ -14,6 +14,12 @@ class JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     print("appliedJob: ${appliedJob}");
+
+    // Check if job_id exists, if not return empty container
+    if (appliedJob['job_id'] == null) {
+      return Container();
+    }
+
     return GestureDetector(
       onTap: () => _showJobOptions(context), // Khi click vào JobCard
       child: Card(

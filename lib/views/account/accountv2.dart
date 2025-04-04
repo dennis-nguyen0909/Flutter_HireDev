@@ -4,8 +4,11 @@ import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/components/SettingCv/SettingCv.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/screens/AccountManagement/AccountManagement.dart';
+import 'package:hiredev/screens/ProfileScreen/ProfileScreen.dart';
 import 'package:hiredev/screens/login/Login.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
+import 'package:hiredev/views/myjob/MyJobScreen.dart';
 import 'package:provider/provider.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -111,7 +114,15 @@ class _AccountScreenState extends State<AccountScreen> {
                           style: TextStyle(color: Colors.black),
                         ),
                         GestureDetector(
-                          onTap: () => print('Hồ Sơ Của Tôi'),
+                          onTap:
+                              () => {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ProfileScreen(),
+                                  ),
+                                ),
+                              },
                           child: Text(
                             'Hồ Sơ Của Tôi',
                             style: TextStyle(color: Colors.lightBlue),
@@ -122,8 +133,6 @@ class _AccountScreenState extends State<AccountScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 16.0),
-              ElevatedButton(onPressed: _logout, child: Text('Đăng xuất')),
               SizedBox(height: 16.0), // Add some space after logout button
               // Job Management Section
               Text(
@@ -139,16 +148,90 @@ class _AccountScreenState extends State<AccountScreen> {
                 crossAxisSpacing: 8.0,
                 childAspectRatio: 2,
                 children: <Widget>[
-                  _buildMenuItem('Việc của tôi', Icons.work),
-                  _buildMenuItem('Thông báo việc làm', Icons.notifications),
-                  _buildMenuItem('Công ty của tôi', Icons.business),
-                  _buildMenuItem('Ẩn hồ sơ', Icons.visibility_off),
-                  _buildMenuItem('Quản lý đơn hàng', Icons.shopping_cart),
+                  _buildMenuItem('Việc của tôi', Icons.work, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MyJobScreen()),
+                    );
+                  }),
+                  _buildMenuItem('Thông báo việc làm', Icons.notifications, () {
+                    // Xử lý khi nhấn vào thông báo việc làm
+                  }),
+                  _buildMenuItem('Công ty của tôi', Icons.business, () {
+                    // Xử lý khi nhấn vào công ty của tôi
+                  }),
+                  _buildMenuItem('Ẩn hồ sơ', Icons.visibility_off, () {
+                    // Xử lý khi nhấn vào ẩn hồ sơ
+                  }),
+                  _buildMenuItem('Quản lý đơn hàng', Icons.shopping_cart, () {
+                    // Xử lý khi nhấn vào quản lý đơn hàng
+                  }),
                 ],
               ),
               SizedBox(height: 16.0),
               // Profile Settings Section
               SettingCv(),
+              Text(
+                "Quản lý tài khoản",
+                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+              ),
+              Container(
+                padding: const EdgeInsets.all(0.0),
+
+                child: Column(
+                  children: <Widget>[
+                    _buildListItem(context, Icons.settings, 'Cài đặt', () {
+                      // Xử lý khi nhấn vào cài đặt
+                    }),
+                    _buildListItem(context, Icons.language, 'Ngôn ngữ', () {
+                      // Xử lý khi nhấn vào ngôn ngữ
+                    }),
+                    _buildListItem(
+                      context,
+                      Icons.question_answer,
+                      'Câu hỏi thường gặp',
+                      () {
+                        // Xử lý khi nhấn vào câu hỏi thường gặp
+                      },
+                    ),
+                    _buildListItem(context, Icons.feedback, 'Gửi phản hồi', () {
+                      // Xử lý khi nhấn vào gửi phản hồi
+                    }),
+                    _buildListItem(context, Icons.more_horiz, 'Xem thêm', () {
+                      // Xử lý khi nhấn vào xem thêm
+                    }),
+                    SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Xử lý khi nhấn vào đăng xuất
+                          _logout();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          // backgroundColor: Color(),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: Text(
+                          'Đăng xuất',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Version 4.0.2',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -156,24 +239,54 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _buildMenuItem(String title, IconData icon) {
-    return Container(
-      padding: EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Column(
-        children: <Widget>[
-          Icon(icon, color: AppColors.primaryColor),
-          SizedBox(height: 8.0),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-        ],
+  Widget _buildMenuItem(String title, IconData icon, Function? onTap) {
+    return GestureDetector(
+      onTap: () {
+        if (onTap != null) {
+          onTap();
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Column(
+          children: <Widget>[
+            Icon(icon, color: AppColors.primaryColor),
+            SizedBox(height: 8.0),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+Widget _buildListItem(
+  BuildContext context,
+  IconData icon,
+  String title,
+  Function onTap,
+) {
+  return Container(
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(color: Colors.grey.shade300, width: 1.0),
+      ),
+    ),
+    child: ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: () {
+        onTap();
+      },
+    ),
+  );
 }
