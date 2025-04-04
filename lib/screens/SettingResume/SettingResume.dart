@@ -178,21 +178,34 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
                       ),
                       CupertinoSwitch(
                         value: isProfilePrivacy,
-                        onChanged: (value) async {
+                        onChanged: (value) {
+                          // Cập nhật state ngay lập tức
                           setState(() {
                             isProfilePrivacy = value;
                           });
                           print('value $value');
+
+                          // Sau đó mới gọi API
                           final userProvider = Provider.of<UserProvider>(
                             context,
                             listen: false,
                           );
                           final UserModel? user = userProvider.user;
-                          final response = await UserServices.updateUser({
-                            'is_profile_privacy': value,
-                            "id": user?.id,
-                          }, context: context);
-                          print('response $response');
+
+                          UserServices.updateUser({
+                                'is_profile_privacy': value,
+                                "id": user?.id,
+                              }, context: context)
+                              .then((response) {
+                                print('response $response');
+                              })
+                              .catchError((error) {
+                                print('Error updating profile privacy: $error');
+                                // Nếu cần, có thể revert lại state khi API lỗi
+                                // setState(() {
+                                //   isProfilePrivacy = !value;
+                                // });
+                              });
                         },
                         activeColor: Color(0xFFDA4156),
                         trackColor: Colors.grey.shade300,

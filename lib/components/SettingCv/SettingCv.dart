@@ -75,7 +75,7 @@ class _SettingCvState extends State<SettingCv> {
   void initState() {
     super.initState();
     profileCompletion();
-    getMyCv(1, 5, {});
+    getMyCv(1, 3, {});
   }
 
   Future<void> profileCompletion() async {
@@ -104,7 +104,7 @@ class _SettingCvState extends State<SettingCv> {
   }
 
   Future<void> getMyCv(current, pageSize, queryParams) async {
-    final user = context.watch<UserProvider>().user;
+    final user = Provider.of<UserProvider>(context, listen: false).user;
 
     setState(() {
       _loadingCvs = true;
@@ -117,7 +117,7 @@ class _SettingCvState extends State<SettingCv> {
         token: await secureStorageService.getRefreshToken(),
       );
 
-      print(response);
+      print("CVS: $response");
 
       if (response['statusCode'] == 200 && response['data'] != null) {
         final List<dynamic> cvsData = response['data']['items'];
@@ -157,16 +157,28 @@ class _SettingCvState extends State<SettingCv> {
             title: 'Bật cho phép tìm kiếm hồ sơ',
             trailing: CupertinoSwitch(
               value: isProfilePrivacy,
-              onChanged: (value) async {
+              onChanged: (value) {
+                // Cập nhật state ngay lập tức
                 setState(() {
                   isProfilePrivacy = value;
                 });
                 print('value $value');
-                final response = await UserServices.updateUser({
-                  'is_profile_privacy': value,
-                  "id": user?.id,
-                }, context: context);
-                print('response $response');
+
+                // Sau đó mới gọi API
+                UserServices.updateUser({
+                      'is_profile_privacy': value,
+                      "id": user?.id,
+                    }, context: context)
+                    .then((response) {
+                      print('response $response');
+                    })
+                    .catchError((error) {
+                      print('Error updating profile privacy: $error');
+                      // Nếu API lỗi, có thể revert lại state
+                      // setState(() {
+                      //   isProfilePrivacy = !value;
+                      // });
+                    });
               },
               activeColor: Color(0xFFDA4156),
               trackColor: Colors.grey.shade300,

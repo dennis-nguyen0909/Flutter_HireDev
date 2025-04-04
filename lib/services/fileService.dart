@@ -87,6 +87,7 @@ class FileService {
   static Future<String?> uploadFile(String filePath) async {
     SecureStorageService secureStorageService = SecureStorageService();
     try {
+      print('filePath: $filePath');
       final url = Uri.parse(dotenv.get('API_URL') + 'media/upload-file');
       final token = await secureStorageService.getRefreshToken();
       final request = http.MultipartRequest('POST', url);

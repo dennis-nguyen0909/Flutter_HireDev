@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hiredev/colors/colors.dart';
+import 'package:hiredev/components/Companies/Companies.dart';
 import 'package:hiredev/components/SettingCv/SettingCv.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
@@ -171,6 +172,9 @@ class _AccountScreenState extends State<AccountScreen> {
               SizedBox(height: 16.0),
               // Profile Settings Section
               SettingCv(),
+              SizedBox(height: 16.0),
+              Companies(),
+              SizedBox(height: 16.0),
               Text(
                 "Quản lý tài khoản",
                 style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),

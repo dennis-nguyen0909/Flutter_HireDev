@@ -6,6 +6,7 @@ import 'package:hiredev/components/PageView/PageViewCustom.dart';
 import 'dart:async';
 import 'package:hiredev/components/TextIcon/TextIcon.dart';
 import 'package:hiredev/models/job.dart';
+import 'package:hiredev/screens/ScreenListCompany/ScreenListCompany.dart';
 import 'package:hiredev/services/apiServices.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -183,10 +184,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               text: 'Gần bạn',
                               colorIcon: AppColors.primaryColor,
                             ),
-                            TextIcon(
-                              icon: Icons.business,
-                              text: 'Công ty',
-                              colorIcon: AppColors.primaryColor,
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ScreenListCompany(),
+                                  ),
+                                );
+                              },
+                              child: TextIcon(
+                                icon: Icons.business,
+                                text: 'Công ty',
+                                colorIcon: AppColors.primaryColor,
+                              ),
                             ),
                             TextIcon(
                               icon: Icons.wallet,

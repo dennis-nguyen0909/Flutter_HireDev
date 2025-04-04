@@ -9,6 +9,7 @@ import 'package:hiredev/services/fileService.dart';
 import 'package:hiredev/services/profileServices.dart';
 import 'package:hiredev/services/userServices.dart';
 import 'package:hiredev/utils/CameraSystem.dart';
+import 'package:hiredev/utils/ImagePicker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -24,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int jobSaved = 0;
   bool isLoadingApplied = true;
   bool isLoadingSaved = true;
+  String? _selectedImagePath;
   @override
   void initState() {
     super.initState();
@@ -33,18 +35,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     getJobSavedOfCandidate();
   }
 
-  final CameraSystem _cameraService = CameraSystem();
+  Future<void> _pickImageFromCamera() async {
+    final imageFile = await ImagePickerService().pickImageFromCamera();
+    if (imageFile != null) {
+      // Xử lý ảnh đã chọn
+      print('Ảnh đã chọn từ camera: ${imageFile.path}');
+    } else {
+      print('Không có ảnh nào được chọn từ camera.');
+    }
+  }
 
-  XFile? _image;
-  final ImagePicker _picker = ImagePicker(); // Khởi tạo ImagePicker
-
-  // Hàm chụp ảnh
-  Future<void> _takePhoto() async {
-    final XFile? image = await _cameraService.takePhoto(context);
-
-    setState(() {
-      _image = image;
-    });
+  Future<void> _pickImageFromGallery() async {
+    final imageFile = await ImagePickerService().pickImageFromGallery();
+    if (imageFile != null) {
+      // Xử lý ảnh đã chọn
+      print('Ảnh đã chọn từ thư viện: ${imageFile.path}');
+      final uploadFile = await FileService.uploadFile(imageFile.path);
+      final jsonResponse = jsonDecode(uploadFile ?? '');
+      if (jsonResponse['statusCode'] == 201) {
+        setState(() {
+          _selectedImagePath = imageFile.path;
+        });
+        print('uploadFile: $jsonResponse');
+        final updateUser = await UserServices.updateUser({
+          "id": user?.id,
+          "avatar": jsonResponse['data']['url'],
+        }, context: context);
+        print('updateUser: $updateUser');
+      } else {
+        print('uploadFile: $jsonResponse');
+      }
+    } else {
+      print('Không có ảnh nào được chọn từ thư viện.');
+    }
   }
 
   Future<void> getJobAppliedOfCandidate() async {
@@ -93,59 +116,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         isLoadingSaved = false;
       });
-    }
-  }
-
-  // Hàm chọn ảnh từ thư viện
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Không chọn ảnh')));
-        return;
-      }
-
-      print("image: $image");
-      final response = await FileService.uploadFile(image.path);
-      if (response == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Không thể tải ảnh lên')));
-        return;
-      }
-
-      final parsedResponse = jsonDecode(response.toString());
-      if (parsedResponse['statusCode'] == 201) {
-        final updateUser = await UserServices.updateUser({
-          'id': user?.id,
-          'avatar': parsedResponse['data']['url'],
-        }, context: context);
-        if (updateUser['statusCode'] == 200) {
-          setState(() {
-            _image = image;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cập nhật ảnh đại diện thành công')),
-          );
-        } else {
-          print("updateUser: ${updateUser['message']}");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cập nhật ảnh đại diện thất bại')),
-          );
-        }
-      } else {
-        print("responseImage: $response");
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Tải ảnh lên thất bại')));
-      }
-    } catch (e) {
-      print("Error picking image: $e");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Có lỗi xảy ra khi chọn ảnh')));
     }
   }
 
@@ -211,7 +181,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(40),
                           child:
-                              user?.avatar != null
+                              _selectedImagePath != null
+                                  ? Image.file(
+                                    File(_selectedImagePath!),
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.cover,
+                                  )
+                                  : user?.avatar != null
                                   ? Image.network(
                                     user?.avatar ?? '',
                                     height: 80,
@@ -242,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           leading: Icon(Icons.camera_alt),
                                           title: Text('Chụp ảnh từ camera'),
                                           onTap: () {
-                                            _takePhoto();
+                                            _pickImageFromCamera();
                                             Navigator.pop(context);
                                           },
                                         ),
@@ -251,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           title: Text('Chọn ảnh từ thư viện'),
                                           onTap: () async {
                                             Navigator.pop(context);
-                                            await _pickImage();
+                                            await _pickImageFromGallery();
                                           },
                                         ),
                                         ListTile(
