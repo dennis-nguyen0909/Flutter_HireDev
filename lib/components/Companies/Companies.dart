@@ -97,18 +97,15 @@ class _CompaniesState extends State<Companies> {
               );
             },
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.grey.shade300),
+              side: BorderSide(color: Colors.black),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(18.0),
               ),
               padding: EdgeInsets.symmetric(vertical: 12.0),
             ),
             child: Text(
               'Xem tất cả',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.black, fontSize: 14),
             ),
           ),
         ),

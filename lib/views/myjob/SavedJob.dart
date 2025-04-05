@@ -41,14 +41,13 @@ class _SavedJobState extends State<SavedJob> {
             'favorite-jobs?current=$current&pageSize=$pageSize&query[user_id]=${user?.id}',
         token: await secureStorageService.getRefreshToken(),
       );
-      print("duydeptrai ${response['data']['items']}");
       if (response['statusCode'] == 200) {
         setState(() {
           savedJobs = response['data']['items'];
         });
       }
     } catch (e) {
-      print("duydeptrai ${e}");
+      print("error ${e}");
     } finally {
       setState(() {
         isLoading = false;
@@ -58,7 +57,6 @@ class _SavedJobState extends State<SavedJob> {
 
   @override
   Widget build(BuildContext context) {
-    print("savedJobs[index]['job_id'] ${savedJobs[0]['job_id']}");
     return RefreshIndicator(
       onRefresh: () async {
         await getRecentSavedJob(1, 10, {});
@@ -75,6 +73,7 @@ class _SavedJobState extends State<SavedJob> {
                   return JobCard(
                     job: savedJobs[index]!['job_id'],
                     isFavorite: true,
+                    isDisplayHeart: false,
                   );
                 },
               ),

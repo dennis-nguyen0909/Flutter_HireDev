@@ -60,7 +60,12 @@ class _PageViewCustomState extends State<PageViewCustom> {
 
                       return Column(
                         children:
-                            pageJobs.map((job) => JobCard(job: job)).toList(),
+                            pageJobs
+                                .map(
+                                  (job) =>
+                                      JobCard(job: job, isDisplayHeart: false),
+                                )
+                                .toList(),
                       );
                     },
                   ),

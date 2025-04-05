@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:hiredev/models/User.dart';
 import 'package:hiredev/models/UserMode.dart';
+import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/screens/InfoCompany/OpenJobCompany.dart';
 import 'package:hiredev/services/apiServices.dart';
 import 'package:hiredev/utils/secure_storage_service.dart';
@@ -59,6 +60,7 @@ class _InfoCompanyScreenState extends State<InfoCompanyScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
           leading: IconButton(
             icon: Icon(Icons.close, color: Colors.black),
@@ -72,98 +74,92 @@ class _InfoCompanyScreenState extends State<InfoCompanyScreen> {
         body:
             isLoading
                 ? Center(child: CircularProgressIndicator())
-                : Column(
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          height: 150,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                user['banner_company'] ??
-                                    'https://via.placeholder.com/500x150',
-                              ),
-                              fit: BoxFit.cover,
-                              onError: (exception, stackTrace) {
-                                print('Error loading banner image: $exception');
-                              },
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: MediaQuery.of(context).size.width / 2 - 40,
-                          bottom: -40,
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: Colors.white,
-                            child: CircleAvatar(
-                              radius: 38,
-                              backgroundImage: NetworkImage(
-                                user['avatar_company'] ??
-                                    'https://via.placeholder.com/76',
-                                scale: 10,
-                              ),
-                              onBackgroundImageError: (exception, stackTrace) {
-                                print('Error loading avatar image: $exception');
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 50),
-                    Text(
-                      user['company_name'] ?? 'Company Name',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      user['organization'] != null &&
-                              user['organization']['industry_type'] != null
-                          ? user['organization']['industry_type']
-                          : 'Industry Type',
-                      style: TextStyle(fontSize: 16, color: Colors.blue),
-                    ),
-                    SizedBox(height: 5),
-                    // Text(
-                    //   '233 lượt theo dõi',
-                    //   style: TextStyle(fontSize: 14, color: Colors.black54),
-                    // ),
-                    // SizedBox(height: 10),
-                    // ElevatedButton(
-                    //   onPressed: () {},
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: Colors.orange,
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(8),
-                    //     ),
-                    //   ),
-                    //   child: Text('Theo dõi', style: TextStyle(color: Colors.white)),
-                    // ),
-                    TabBar(
-                      labelColor: Colors.blue,
-                      unselectedLabelColor: Colors.black54,
-                      indicatorColor: Colors.blue,
-                      tabs: [
-                        Tab(text: 'Thông tin'),
-                        Tab(text: 'Việc làm đang tuyển'),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          CompanyInfoTab(user: user),
-                          OpenJobCompany(user: user),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                : buildCompanyContent(),
       ),
+    );
+  }
+
+  Widget buildCompanyContent() {
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(
+                    user['banner_company'] ??
+                        'https://via.placeholder.com/500x150',
+                  ),
+                  fit: BoxFit.cover,
+                  onError: (exception, stackTrace) {
+                    print('Error loading banner image: $exception');
+                  },
+                ),
+              ),
+            ),
+            Positioned(
+              left: MediaQuery.of(context).size.width / 2 - 40,
+              bottom: -40,
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 38,
+                  backgroundImage: NetworkImage(
+                    user['avatar_company'] ?? 'https://via.placeholder.com/76',
+                    scale: 10,
+                  ),
+                  onBackgroundImageError: (exception, stackTrace) {
+                    print('Error loading avatar image: $exception');
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 50),
+        Text(
+          user['company_name'] ?? 'Company Name',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          user['organization'] != null &&
+                  user['organization']['industry_type'] != null
+              ? user['organization']['industry_type']
+              : 'Industry Type',
+          style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
+        ),
+        SizedBox(height: 5),
+        // Text(
+        //   '233 lượt theo dõi',
+        //   style: TextStyle(fontSize: 14, color: Colors.black54),
+        // ),
+        // SizedBox(height: 10),
+        // ElevatedButton(
+        //   onPressed: () {},
+        //   style: ElevatedButton.styleFrom(
+        //     backgroundColor: Colors.orange,
+        //     shape: RoundedRectangleBorder(
+        //       borderRadius: BorderRadius.circular(8),
+        //     ),
+        //   ),
+        //   child: Text('Theo dõi', style: TextStyle(color: Colors.white)),
+        // ),
+        TabBar(
+          labelColor: AppColors.primaryColor,
+          unselectedLabelColor: Colors.black54,
+          indicatorColor: AppColors.primaryColor,
+          tabs: [Tab(text: 'Thông tin'), Tab(text: 'Việc làm đang tuyển')],
+        ),
+        Expanded(
+          child: TabBarView(
+            children: [CompanyInfoTab(user: user), OpenJobCompany(user: user)],
+          ),
+        ),
+      ],
     );
   }
 }

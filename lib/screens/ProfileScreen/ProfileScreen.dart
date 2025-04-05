@@ -8,9 +8,11 @@ import 'package:hiredev/components/EducationComponent/EducationComponent.dart';
 import 'package:hiredev/components/ExperienceComponent/ExperienceComponent.dart';
 import 'package:hiredev/components/PrizeComponent/PrizeComponent.dart';
 import 'package:hiredev/components/Section/Section.dart';
+import 'package:hiredev/components/SkillComponent/SkillComponent.dart';
 import 'package:hiredev/modals/EducationModal.dart';
 import 'package:hiredev/modals/ModalBasicInformation.dart';
 import 'package:hiredev/models/UserMode.dart';
+import 'package:hiredev/models/job.dart';
 import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/services/EducationServices.dart';
 import 'package:hiredev/services/fileService.dart';
@@ -473,7 +475,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tiết kiệm thời gian bằng cách nhập hồ sơ LinkedIn hiện có của bạn!',
+                      'Tiết kiệm thời gian bằng cách nhập hồ sơ HireDev hiện có của bạn!',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 8),
@@ -491,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // ),
                     SizedBox(height: 8),
                     Text(
-                      'Thông tin hồ sơ VietnamWorks sẽ được thay thế bằng thông tin từ tài khoản Linkedin của bạn. Ví dụ: kỹ năng, học vấn, kinh nghiệm,... và bạn không thể hoàn tác.',
+                      'Thông tin hồ sơ HireDev sẽ được thay thế bằng thông tin từ tài khoản Linkedin của bạn. Ví dụ: kỹ năng, học vấn, kinh nghiệm,... và bạn không thể hoàn tác.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -505,26 +507,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Text(
                       'Thiết lập hồ sơ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Bật cho phép tìm kiếm hồ sơ'),
-                        Switch(
-                          value:
-                              false, // Thay đổi giá trị tùy thuộc vào trạng thái
-                          onChanged: (value) {},
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Bật và cho phép nhà tuyển dụng xem hồ sơ của bạn',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SkillComponent(),
               ),
               SizedBox(height: 16),
               Padding(

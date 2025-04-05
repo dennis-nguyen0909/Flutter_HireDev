@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/components/Companies/Companies.dart';
 import 'package:hiredev/components/SettingCv/SettingCv.dart';
+import 'package:hiredev/modals/SettingModal.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
 import 'package:hiredev/screens/AccountManagement/AccountManagement.dart';
@@ -48,6 +49,11 @@ class _AccountScreenState extends State<AccountScreen>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   Future<void> profileCompletion() async {
@@ -217,7 +223,10 @@ class _AccountScreenState extends State<AccountScreen>
                                   MaterialPageRoute(
                                     builder: (context) => ProfileScreen(),
                                   ),
-                                ),
+                                ).then((_) {
+                                  // Refresh profile completion when returning from ProfileScreen
+                                  profileCompletion();
+                                }),
                               },
                           child: Text(
                             'Hồ Sơ Của Tôi',
@@ -248,7 +257,10 @@ class _AccountScreenState extends State<AccountScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => MyJobScreen()),
-                    );
+                    ).then((_) {
+                      // Refresh profile completion when returning from MyJobScreen
+                      profileCompletion();
+                    });
                   }),
                   _buildMenuItem('Thông báo việc làm', Icons.notifications, () {
                     // Xử lý khi nhấn vào thông báo việc làm
@@ -281,6 +293,14 @@ class _AccountScreenState extends State<AccountScreen>
                   children: <Widget>[
                     _buildListItem(context, Icons.settings, 'Cài đặt', () {
                       // Xử lý khi nhấn vào cài đặt
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (BuildContext context) {
+                          return SettingModal();
+                        },
+                      );
                     }),
                     _buildListItem(context, Icons.language, 'Ngôn ngữ', () {
                       // Xử lý khi nhấn vào ngôn ngữ
@@ -308,7 +328,7 @@ class _AccountScreenState extends State<AccountScreen>
                           _logout();
                         },
                         style: ElevatedButton.styleFrom(
-                          // backgroundColor: Color(),
+                          backgroundColor: Colors.grey.shade200,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),

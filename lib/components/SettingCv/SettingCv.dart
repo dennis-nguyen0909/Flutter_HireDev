@@ -381,8 +381,9 @@ class _SettingCvState extends State<SettingCv> {
                   ),
               ],
             ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
+        Container(
+          padding: const EdgeInsets.all(0.0),
+          margin: EdgeInsets.symmetric(vertical: 8.0),
           child: Center(
             child: OutlinedButton(
               onPressed: () {
@@ -395,10 +396,14 @@ class _SettingCvState extends State<SettingCv> {
               },
               style: OutlinedButton.styleFrom(
                 minimumSize: Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  side: BorderSide(color: Colors.grey.shade100),
+                ),
               ),
               child: Text(
                 'Thiết lập hồ sơ',
-                style: TextStyle(fontSize: 16, color: AppColors.primaryColor),
+                style: TextStyle(fontSize: 16, color: Colors.black),
               ),
             ),
           ),

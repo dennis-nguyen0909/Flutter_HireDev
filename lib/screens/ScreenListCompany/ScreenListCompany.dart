@@ -11,7 +11,7 @@ class ScreenListCompany extends StatefulWidget {
 class _ScreenListCompanyState extends State<ScreenListCompany> {
   String idRoleEmployer = '';
   List<dynamic> companies = [];
-  bool isLoading = false;
+  bool isLoading = true; // Set initial loading state to true
   String companyName = '';
   Timer? _debounce;
   TextEditingController _searchController = TextEditingController();
@@ -75,18 +75,29 @@ class _ScreenListCompanyState extends State<ScreenListCompany> {
   }
 
   Future<void> getRoleEmployer() async {
-    final response = await CompanyServices.getRoleEmployer();
-    if (response['statusCode'] == 200) {
-      setState(() {
-        idRoleEmployer = response['data']['_id'];
-      });
+    setState(() {
+      isLoading = true;
+    });
 
-      // Only call getCompanies if we have a valid idRoleEmployer
-      if (idRoleEmployer.isNotEmpty) {
-        getCompanies(idRoleEmployer);
+    try {
+      final response = await CompanyServices.getRoleEmployer();
+      if (response['statusCode'] == 200) {
+        setState(() {
+          idRoleEmployer = response['data']['_id'];
+        });
+
+        // Only call getCompanies if we have a valid idRoleEmployer
+        if (idRoleEmployer.isNotEmpty) {
+          await getCompanies(idRoleEmployer);
+        }
       }
+      print("idRoleEmployer: $idRoleEmployer");
+    } catch (e) {
+      print("Error fetching employer role: $e");
+      setState(() {
+        isLoading = false;
+      });
     }
-    print("idRoleEmployer: $idRoleEmployer");
   }
 
   @override

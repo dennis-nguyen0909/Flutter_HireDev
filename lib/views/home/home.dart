@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hiredev/colors/colors.dart';
-import 'package:hiredev/components/JobCard/JobCard.dart';
 import 'package:hiredev/components/PageView/PageViewCustom.dart';
 import 'dart:async';
 import 'package:hiredev/components/TextIcon/TextIcon.dart';

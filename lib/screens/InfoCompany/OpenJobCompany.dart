@@ -118,7 +118,7 @@ class _OpenJobCompanyState extends State<OpenJobCompany> {
       children: [
         // Bộ lọc
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           child: Column(
             children: [
               // Ô tìm kiếm
@@ -143,12 +143,21 @@ class _OpenJobCompanyState extends State<OpenJobCompany> {
                   Expanded(
                     child: DropdownButtonFormField(
                       value: sortBy,
-                      decoration: InputDecoration(border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
+                        ),
+                      ),
                       items:
                           sortOptions.map((option) {
                             return DropdownMenuItem(
                               value: option["value"],
-                              child: Text(option["label"]!),
+                              child: Text(
+                                option["label"]!,
+                                style: TextStyle(fontSize: 13),
+                              ),
                             );
                           }).toList(),
                       onChanged: (value) {
@@ -163,12 +172,18 @@ class _OpenJobCompanyState extends State<OpenJobCompany> {
                   Expanded(
                     child: DropdownButtonFormField(
                       value: jobType,
-                      decoration: InputDecoration(border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
+                        ),
+                      ),
                       items:
                           jobTypes.map((type) {
                             return DropdownMenuItem(
                               value: type,
-                              child: Text(type),
+                              child: Text(type, style: TextStyle(fontSize: 13)),
                             );
                           }).toList(),
                       onChanged: (value) {
@@ -186,12 +201,18 @@ class _OpenJobCompanyState extends State<OpenJobCompany> {
                           contractTypes.contains(contractType)
                               ? contractType
                               : contractTypes[0], // Kiểm tra giá trị hợp lệ
-                      decoration: InputDecoration(border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
+                        ),
+                      ),
                       items:
                           contractTypes.map((type) {
                             return DropdownMenuItem<String>(
                               value: type,
-                              child: Text(type),
+                              child: Text(type, style: TextStyle(fontSize: 13)),
                             );
                           }).toList(),
                       onChanged: (value) {
@@ -210,7 +231,7 @@ class _OpenJobCompanyState extends State<OpenJobCompany> {
 
         // Hiển thị tổng số công việc
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           child: Row(
             children: [
               Text(
@@ -230,11 +251,12 @@ class _OpenJobCompanyState extends State<OpenJobCompany> {
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
+            padding: EdgeInsets.symmetric(horizontal: 8.0),
             itemCount: jobs.length + (hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index < jobs.length) {
                 return Padding(
-                  padding: EdgeInsets.only(left: 12, right: 12, bottom: 12),
+                  padding: EdgeInsets.only(bottom: 12),
                   child: JobCard(job: jobs[index], isDisplayHeart: false),
                 );
               } else {

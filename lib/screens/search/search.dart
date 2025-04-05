@@ -256,7 +256,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 if (index == _jobs.length) {
                   return Center(child: CircularProgressIndicator());
                 }
-                return JobCard(job: _jobs[index]);
+                return JobCard(job: _jobs[index], isDisplayHeart: false);
               },
             ),
           ),

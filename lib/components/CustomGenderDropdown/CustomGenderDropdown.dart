@@ -28,7 +28,7 @@ class _CustomGenderDropdownState extends State<CustomGenderDropdown> {
           'Giới tính',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        SizedBox(height: 8), // Thêm khoảng cách giữa Text và DropdownButton
+        SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),

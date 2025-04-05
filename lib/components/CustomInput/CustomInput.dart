@@ -7,16 +7,16 @@ class CustomInput extends StatelessWidget {
   final String hint;
   final TextEditingController controller;
   final bool required;
-  final InputType type; // Thêm tùy chọn type
-  final bool disabled; // Thêm tùy chọn disabled
+  final InputType type;
+  final bool disabled;
 
   CustomInput({
     required this.label,
     required this.hint,
     required this.controller,
     this.required = false,
-    this.type = InputType.input, // Giá trị mặc định là input
-    this.disabled = false, // Giá trị mặc định là không bị vô hiệu hóa
+    this.type = InputType.input,
+    this.disabled = false,
   });
 
   @override

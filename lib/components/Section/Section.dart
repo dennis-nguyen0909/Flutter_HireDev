@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hiredev/colors/colors.dart';
 
 class SectionComponent extends StatelessWidget {
   final String title;
@@ -31,8 +32,11 @@ class SectionComponent extends StatelessWidget {
               onPressed: () {
                 _showModal(context);
               },
-              icon: Icon(Icons.add),
-              label: Text('Thêm'),
+              icon: Icon(Icons.add, color: AppColors.primaryColor),
+              label: Text(
+                'Thêm',
+                style: TextStyle(color: AppColors.primaryColor),
+              ),
             ),
           ],
         ),

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/components/CustomNotification/CustomNotification.dart';
 import 'package:hiredev/components/SettingCv/SettingCv.dart';
 import 'package:hiredev/models/UserMode.dart';
@@ -133,6 +135,7 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
     final int totalPages = meta['total_pages'] ?? 1;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -453,89 +456,95 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
                         ],
                       ),
                   SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.blue.shade200,
-                        width: 1,
-                        style: BorderStyle.solid,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
+                  CustomPaint(
+                    painter: DashedBorderPainter(
+                      color: AppColors.primaryColor,
+                      strokeWidth: 1,
+                      dashWidth: 5,
+                      dashSpace: 3,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Hồ sơ từ máy của bạn',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Hồ sơ từ máy của bạn',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Hỗ trợ định dạng .doc, .docx, .pdf có kích thước dưới 5120 KB',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed:
-                              _loadingUpload
-                                  ? null
-                                  : () async {
-                                    String? filePath =
-                                        await FileSystem.pickFile(
-                                          type: FileType.custom,
-                                          allowedExtensions: [
-                                            'pdf',
-                                            'doc',
-                                            'docx',
-                                          ],
-                                        );
+                          SizedBox(height: 8),
+                          Text(
+                            'Hỗ trợ định dạng .doc, .docx, .pdf có kích thước dưới 5120 KB',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed:
+                                _loadingUpload
+                                    ? null
+                                    : () async {
+                                      String? filePath =
+                                          await FileSystem.pickFile(
+                                            type: FileType.custom,
+                                            allowedExtensions: [
+                                              'pdf',
+                                              'doc',
+                                              'docx',
+                                            ],
+                                          );
 
-                                    if (filePath != null) {
-                                      // Handle the selected file
-                                      print('Selected file: $filePath');
-                                      await uploadFile(filePath);
-                                      // TODO: Implement file upload logic
-                                    } else {
-                                      // User canceled the picker
-                                      print('File selection canceled');
-                                    }
-                                  },
-                          icon:
-                              _loadingUpload
-                                  ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.blue,
+                                      if (filePath != null) {
+                                        // Handle the selected file
+                                        print('Selected file: $filePath');
+                                        await uploadFile(filePath);
+                                        // TODO: Implement file upload logic
+                                      } else {
+                                        // User canceled the picker
+                                        print('File selection canceled');
+                                      }
+                                    },
+                            icon:
+                                _loadingUpload
+                                    ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.blue,
+                                      ),
+                                    )
+                                    : Icon(
+                                      Icons.add,
+                                      color: AppColors.primaryColor,
                                     ),
-                                  )
-                                  : Icon(Icons.add, color: Colors.blue),
-                          label: Text(
-                            _loadingUpload
-                                ? 'Đang tải lên...'
-                                : 'Tải hồ sơ lên',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade50,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                            label: Text(
+                              _loadingUpload
+                                  ? 'Đang tải lên...'
+                                  : 'Tải hồ sơ lên',
+                              style: TextStyle(color: AppColors.primaryColor),
                             ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.backgroundColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -571,5 +580,82 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
       ),
       trailing: trailing,
     );
+  }
+}
+
+class DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+
+  DashedBorderPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.dashWidth,
+    required this.dashSpace,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = strokeWidth
+          ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    final dashWidth = this.dashWidth;
+    final dashSpace = this.dashSpace;
+    final width = size.width;
+    final height = size.height;
+    final radius = 8.0;
+
+    // Top left corner
+    path.moveTo(radius, 0);
+    // Top line
+    for (double i = radius; i < width - radius; i += dashWidth + dashSpace) {
+      path.lineTo(i + dashWidth, 0);
+      path.moveTo(i + dashWidth + dashSpace, 0);
+    }
+    // Top right corner
+    path.arcToPoint(Offset(width, radius), radius: Radius.circular(radius));
+    // Right line
+    for (double i = radius; i < height - radius; i += dashWidth + dashSpace) {
+      path.lineTo(width, i + dashWidth);
+      path.moveTo(width, i + dashWidth + dashSpace);
+    }
+    // Bottom right corner
+    path.arcToPoint(
+      Offset(width - radius, height),
+      radius: Radius.circular(radius),
+    );
+    // Bottom line
+    for (double i = width - radius; i > radius; i -= dashWidth + dashSpace) {
+      path.lineTo(i - dashWidth, height);
+      path.moveTo(i - dashWidth - dashSpace, height);
+    }
+    // Bottom left corner
+    path.arcToPoint(
+      Offset(0, height - radius),
+      radius: Radius.circular(radius),
+    );
+    // Left line
+    for (double i = height - radius; i > radius; i -= dashWidth + dashSpace) {
+      path.lineTo(0, i - dashWidth);
+      path.moveTo(0, i - dashWidth - dashSpace);
+    }
+    // Top left corner
+    path.arcToPoint(Offset(radius, 0), radius: Radius.circular(radius));
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(DashedBorderPainter oldDelegate) {
+    return color != oldDelegate.color ||
+        strokeWidth != oldDelegate.strokeWidth ||
+        dashWidth != oldDelegate.dashWidth ||
+        dashSpace != oldDelegate.dashSpace;
   }
 }

@@ -59,7 +59,7 @@ class AuthChecker extends StatefulWidget {
 
 class _AuthCheckerState extends State<AuthChecker> {
   final SecureStorageService secureStorageService = SecureStorageService();
-  bool _isLoading = true; // Thêm trạng thái loading
+  bool _isLoading = true;
 
   @override
   void initState() {

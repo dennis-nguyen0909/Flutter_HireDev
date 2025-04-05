@@ -26,18 +26,37 @@ class JobCard extends StatefulWidget {
 
 class JobCardState extends State<JobCard> {
   void onPressDetail() {
-    String jobId =
-        widget.job is Map
-            ? (widget.job as Map)['job_id']['_id'] ??
-                (widget.job as Map)['_id'] ??
-                ''
-            : widget.job.id;
-    String jobTitle =
-        widget.job is Map
-            ? (widget.job as Map)['job_id']['title'] ??
-                (widget.job as Map)['title'] ??
-                ''
-            : widget.job.title;
+    print("jobId ${widget.job}");
+    String jobId = '';
+    String jobTitle = '';
+
+    if (widget.job is Map) {
+      final Map jobMap = widget.job as Map;
+
+      // Handle job_id case
+      if (jobMap.containsKey('job_id') && jobMap['job_id'] != null) {
+        if (jobMap['job_id'] is Map) {
+          jobId = jobMap['job_id']['_id'] ?? '';
+          jobTitle = jobMap['job_id']['title'] ?? '';
+        } else {
+          // If job_id is not a map but a string ID
+          jobId = jobMap['job_id'].toString();
+        }
+      }
+
+      // Fallback to direct properties if job_id doesn't have what we need
+      if (jobId.isEmpty) {
+        jobId = jobMap['_id'] ?? '';
+      }
+
+      if (jobTitle.isEmpty) {
+        jobTitle = jobMap['title'] ?? '';
+      }
+    } else if (widget.job != null) {
+      // Handle Job object case
+      jobId = widget.job.id ?? '';
+      jobTitle = widget.job.title ?? '';
+    }
 
     Navigator.push(
       context,
