@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hiredev/components/CertificateComponent/CertificateComponent.dart';
+import 'package:hiredev/components/CourseComponent/CourseComponent.dart';
 import 'package:hiredev/components/EducationComponent/EducationComponent.dart';
+import 'package:hiredev/components/ExperienceComponent/ExperienceComponent.dart';
 import 'package:hiredev/components/PrizeComponent/PrizeComponent.dart';
 import 'package:hiredev/components/Section/Section.dart';
 import 'package:hiredev/modals/EducationModal.dart';
@@ -536,52 +539,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SectionComponent(
-                  title: 'Khóa học',
-                  description:
-                      'Thêm các khóa học và chương trình đào tạo bạn đã tham gia.',
-                  modalContent: Container(
-                    height: MediaQuery.of(context).size.height * 0.94,
-                    child: CourseModal(),
-                  ),
-                ),
+                child: CourseComponent(),
               ),
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SectionComponent(
-                  title: 'Dự án',
-                  description: 'Thêm các dự án bạn đã tham gia và đóng góp.',
-                  modalContent: Container(
-                    height: MediaQuery.of(context).size.height * 0.94,
-                    child: ProjectModal(),
-                  ),
-                ),
+                child: PrizeComponent(),
               ),
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SectionComponent(
-                  title: 'Kinh nghiệm làm việc',
-                  description: 'Thêm kinh nghiệm làm việc của bạn.',
-                  modalContent: Container(
-                    height: MediaQuery.of(context).size.height * 0.94,
-                    child: ExperienceModal(),
-                  ),
-                ),
+                child: ExperienceComponent(),
               ),
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SectionComponent(
-                  title: 'Chứng chỉ',
-                  description:
-                      'Thêm các chứng chỉ và chứng nhận bạn đã đạt được.',
-                  modalContent: Container(
-                    height: MediaQuery.of(context).size.height * 0.94,
-                    child: CertificateModal(),
-                  ),
-                ),
+                child: CertificateComponent(),
               ),
             ],
           ),

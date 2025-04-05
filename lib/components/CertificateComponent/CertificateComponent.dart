@@ -42,7 +42,16 @@ class _CertificateComponentState extends State<CertificateComponent> {
       certificate['_id'],
       certificate,
     );
+    print("onUpdateCertificate: $response");
     if (response['statusCode'] == 200) {
+      getCertificatesOfCandidate();
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> createCertificate(dynamic certificate) async {
+    final response = await CertificateServices.createCertificate(certificate);
+    if (response['statusCode'] == 201) {
       getCertificatesOfCandidate();
       Navigator.pop(context);
     }
@@ -81,6 +90,7 @@ class _CertificateComponentState extends State<CertificateComponent> {
                                 child: CertificateModal(
                                   certificate: item,
                                   onUpdate: onUpdateCertificate,
+                                  onCreate: createCertificate,
                                 ),
                               );
                             },
@@ -157,7 +167,7 @@ class _CertificateComponentState extends State<CertificateComponent> {
                   children: [
                     Expanded(
                       child: Text(
-                        item['name'] ?? '',
+                        item['certificate_name'] ?? '',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.0,
@@ -168,12 +178,12 @@ class _CertificateComponentState extends State<CertificateComponent> {
                   ],
                 ),
                 Text(
-                  item['organization'] ?? '',
+                  item['organization_name'] ?? '',
                   style: TextStyle(fontSize: 14.0),
                 ),
                 SizedBox(height: 4.0),
                 Text(
-                  '${DateTime.parse(item['issue_date']).month} / ${DateTime.parse(item['issue_date']).year}${item['expiry_date'] != null ? ' - ${DateTime.parse(item['expiry_date']).month} / ${DateTime.parse(item['expiry_date']).year}' : ''}',
+                  '${DateTime.parse(item['start_date']).month} / ${DateTime.parse(item['start_date']).year}${item['end_date'] != null ? ' - ${DateTime.parse(item['end_date']).month} / ${DateTime.parse(item['end_date']).year}' : ''}',
                   style: TextStyle(fontSize: 14.0, color: Colors.grey.shade600),
                 ),
               ],
@@ -183,17 +193,7 @@ class _CertificateComponentState extends State<CertificateComponent> {
       },
       modalContent: Container(
         height: MediaQuery.of(context).size.height * 0.94,
-        child: CertificateModal(
-          onUpdate: (certificate) async {
-            final response = await CertificateServices.createCertificate(
-              certificate,
-            );
-            if (response['statusCode'] == 201) {
-              getCertificatesOfCandidate();
-              Navigator.pop(context);
-            }
-          },
-        ),
+        child: CertificateModal(onCreate: createCertificate),
       ),
     );
   }

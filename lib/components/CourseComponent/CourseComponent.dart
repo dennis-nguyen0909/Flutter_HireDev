@@ -1,48 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:hiredev/components/Section/Section.dart';
+import 'package:hiredev/modals/CourseModal.dart';
 import 'package:hiredev/modals/EducationModal.dart';
+import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/services/CourseServices.dart';
 import 'package:hiredev/services/EducationServices.dart';
+import 'package:provider/provider.dart';
 
-class EducationComponent extends StatefulWidget {
+class CourseComponent extends StatefulWidget {
   @override
-  _EducationComponentState createState() => _EducationComponentState();
+  _CourseComponentState createState() => _CourseComponentState();
 }
 
-class _EducationComponentState extends State<EducationComponent> {
-  List<dynamic> educations = [];
+class _CourseComponentState extends State<CourseComponent> {
+  List<dynamic> courses = [];
   @override
   void initState() {
     super.initState();
-    getEducationOfCandidate();
+    getCourseOfCandidate(1, 10);
   }
 
-  Future<void> getEducationOfCandidate() async {
-    final response = await EducationServices.getEducationByUserToken();
-    print("getEducationOfCandidate: $response");
+  Future<void> getCourseOfCandidate(int current, int pageSize) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    final response = await CourseServices.getCourseByUserToken(
+      user!.id!,
+      current,
+      pageSize,
+    );
+    print("getCourseOfCandidate: $response");
     if (response['statusCode'] == 200) {
       setState(() {
-        educations = response['data'];
+        courses = response['data']['items'];
       });
     }
   }
 
-  Future<void> onUpdateEducation(dynamic education) async {
-    final response = await EducationServices.updateEducation(
-      education['_id'],
-      education,
-    );
+  Future<void> onUpdateCourse(dynamic course) async {
+    final response = await CourseServices.updateCourse(course['_id'], course);
 
     if (response['statusCode'] == 200) {
-      getEducationOfCandidate();
+      getCourseOfCandidate(1, 10);
       Navigator.pop(context);
     }
   }
 
-  Future<void> createEducation(dynamic education) async {
-    final response = await EducationServices.createEducation(education);
-    print("createEducation1: $response");
+  Future<void> createCourse(dynamic course) async {
+    final response = await CourseServices.createCourse(course);
+    print("createCourse1: $response");
     if (response['statusCode'] == 201) {
-      getEducationOfCandidate();
+      getCourseOfCandidate(1, 10);
       Navigator.pop(context);
     }
   }
@@ -50,10 +57,9 @@ class _EducationComponentState extends State<EducationComponent> {
   @override
   Widget build(BuildContext context) {
     return SectionComponent(
-      title: 'Học vấn',
-      description:
-          'Thể hiện những kiến thức học vấn bạn có cho công việc của mình.',
-      items: educations,
+      title: 'Khóa học',
+      description: 'Thể hiện những khóa học bạn đã tham gia.',
+      items: courses,
       renderItem: (item) {
         return GestureDetector(
           onTap: () {
@@ -78,10 +84,10 @@ class _EducationComponentState extends State<EducationComponent> {
                               return Container(
                                 height:
                                     MediaQuery.of(context).size.height * 0.94,
-                                child: EducationModal(
-                                  education: item,
-                                  onUpdate: onUpdateEducation,
-                                  onCreate: createEducation,
+                                child: CourseModal(
+                                  course: item,
+                                  onUpdate: onUpdateCourse,
+                                  onCreate: createCourse,
                                 ),
                               );
                             },
@@ -112,12 +118,15 @@ class _EducationComponentState extends State<EducationComponent> {
                                       Navigator.pop(context);
                                       // Delete education
                                       try {
-                                        await EducationServices.deleteEducation(
+                                        await CourseServices.deleteCourse(
                                           item['_id'],
                                         );
-                                        getEducationOfCandidate(); // Refresh the list
+                                        getCourseOfCandidate(
+                                          1,
+                                          10,
+                                        ); // Refresh the list
                                       } catch (e) {
-                                        print("Error deleting education: $e");
+                                        print("Error deleting course: $e");
                                       }
                                     },
                                     child: Text(
@@ -160,7 +169,7 @@ class _EducationComponentState extends State<EducationComponent> {
                   children: [
                     Expanded(
                       child: Text(
-                        item['school'] ?? '',
+                        item['course_name'] ?? '',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.0,
@@ -170,7 +179,10 @@ class _EducationComponentState extends State<EducationComponent> {
                     Icon(Icons.more_vert, color: Colors.grey),
                   ],
                 ),
-                Text(item['major'] ?? '', style: TextStyle(fontSize: 14.0)),
+                Text(
+                  item['organization_name'] ?? '',
+                  style: TextStyle(fontSize: 14.0),
+                ),
                 SizedBox(height: 4.0),
                 Text(
                   '${DateTime.parse(item['start_date']).month}/${DateTime.parse(item['start_date']).year} - ${item['end_date'] != null ? "${DateTime.parse(item['end_date']).month}/${DateTime.parse(item['end_date']).year}" : 'Hiện tại'}',
@@ -183,7 +195,7 @@ class _EducationComponentState extends State<EducationComponent> {
       },
       modalContent: Container(
         height: MediaQuery.of(context).size.height * 0.94,
-        child: EducationModal(onCreate: createEducation),
+        child: CourseModal(onCreate: createCourse),
       ),
     );
   }

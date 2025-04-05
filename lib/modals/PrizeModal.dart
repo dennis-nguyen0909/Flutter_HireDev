@@ -20,7 +20,6 @@ class PrizeModal extends StatefulWidget {
 class _PrizeModalState extends State<PrizeModal> {
   DateTime? _date;
   TextEditingController _nameController = TextEditingController();
-  TextEditingController _descriptionController = TextEditingController();
   TextEditingController _organizationController = TextEditingController();
   TextEditingController _linkController = TextEditingController();
   bool isLoading = false;
@@ -32,7 +31,6 @@ class _PrizeModalState extends State<PrizeModal> {
     if (widget.prize != null) {
       isEditing = true;
       _nameController.text = widget.prize['prize_name'] ?? '';
-      _descriptionController.text = widget.prize['description'] ?? '';
       _organizationController.text = widget.prize['organization_name'] ?? '';
       _linkController.text = widget.prize['prize_link'] ?? '';
       _date =
@@ -65,8 +63,7 @@ class _PrizeModalState extends State<PrizeModal> {
       final user = userProvider.user;
 
       if (_nameController.text.isEmpty ||
-          _organizationController.text.isEmpty ||
-          _descriptionController.text.isEmpty) {
+          _organizationController.text.isEmpty) {
         showDialog(
           context: context,
           builder:
@@ -113,7 +110,6 @@ class _PrizeModalState extends State<PrizeModal> {
 
       final params = {
         'prize_name': _nameController.text,
-        'description': _descriptionController.text,
         'organization_name': _organizationController.text,
         'date_of_receipt': _date!.toIso8601String(),
         'prize_link':
@@ -136,7 +132,6 @@ class _PrizeModalState extends State<PrizeModal> {
           if (widget.onUpdate != null) {
             widget.onUpdate!(params);
           }
-          Navigator.pop(context);
         }
       }
     } catch (e) {
@@ -247,14 +242,6 @@ class _PrizeModalState extends State<PrizeModal> {
                   ),
                   SizedBox(height: 16),
                   CustomInput(
-                    label: "Mô tả",
-                    hint: "Mô tả về giải thưởng",
-                    controller: _descriptionController,
-                    type: InputType.textarea,
-                    required: true,
-                  ),
-                  SizedBox(height: 16),
-                  CustomInput(
                     label: "Liên kết",
                     hint: "Liên kết đến giải thưởng (không bắt buộc)",
                     controller: _linkController,
@@ -280,7 +267,6 @@ class _PrizeModalState extends State<PrizeModal> {
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
     _organizationController.dispose();
     _linkController.dispose();
     super.dispose();

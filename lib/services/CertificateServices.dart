@@ -44,7 +44,7 @@ class CertificateServices {
   ) async {
     try {
       final token = await SecureStorageService().getRefreshToken();
-      final response = await ApiService().put(
+      final response = await ApiService().patch(
         '${dotenv.env['API_URL']}certificates/$id',
         certificate,
         token: token,

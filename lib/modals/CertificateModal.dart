@@ -11,45 +11,57 @@ import 'package:provider/provider.dart';
 class CertificateModal extends StatefulWidget {
   final dynamic certificate;
   final Function(dynamic)? onUpdate;
-  CertificateModal({this.certificate, this.onUpdate});
+  final Function(dynamic)? onCreate;
+  CertificateModal({this.certificate, this.onUpdate, this.onCreate});
   @override
   _CertificateModalState createState() => _CertificateModalState();
 }
 
 class _CertificateModalState extends State<CertificateModal> {
   DateTime? _issueDate;
-  DateTime? _expiryDate;
+  DateTime? _startDate;
+  DateTime? _endDate;
   TextEditingController _nameController = TextEditingController();
   TextEditingController _organizationController = TextEditingController();
   TextEditingController _credentialIdController = TextEditingController();
   TextEditingController _credentialUrlController = TextEditingController();
   bool isLoading = false;
   bool isEditing = false;
-  bool _hasExpiryDate = false;
+  bool _isNoExpiry = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.certificate != null) {
       isEditing = true;
-      _nameController.text = widget.certificate['name'] ?? '';
-      _organizationController.text = widget.certificate['organization'] ?? '';
+      _nameController.text = widget.certificate['certificate_name'] ?? '';
+      _organizationController.text =
+          widget.certificate['organization_name'] ?? '';
       _credentialIdController.text = widget.certificate['credential_id'] ?? '';
       _credentialUrlController.text =
-          widget.certificate['credential_url'] ?? '';
+          widget.certificate['link_certificate'] ?? '';
       _issueDate =
           widget.certificate['issue_date'] != null
               ? DateTime.parse(widget.certificate['issue_date'])
               : null;
-      _expiryDate =
-          widget.certificate['expiry_date'] != null
-              ? DateTime.parse(widget.certificate['expiry_date'])
+      _startDate =
+          widget.certificate['start_date'] != null
+              ? DateTime.parse(widget.certificate['start_date'])
               : null;
-      _hasExpiryDate = _expiryDate != null;
+      _endDate =
+          widget.certificate['end_date'] != null
+              ? DateTime.parse(widget.certificate['end_date'])
+              : null;
+      _isNoExpiry = _endDate == null;
     }
   }
 
-  Future<void> _selectDate(BuildContext context, bool isIssueDate) async {
+  Future<void> _selectDate(
+    BuildContext context,
+    bool isIssueDate, {
+    bool isStartDate = false,
+    bool isEndDate = false,
+  }) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -60,8 +72,10 @@ class _CertificateModalState extends State<CertificateModal> {
       setState(() {
         if (isIssueDate) {
           _issueDate = picked;
-        } else {
-          _expiryDate = picked;
+        } else if (isStartDate) {
+          _startDate = picked;
+        } else if (isEndDate) {
+          _endDate = picked;
         }
       });
     }
@@ -76,8 +90,7 @@ class _CertificateModalState extends State<CertificateModal> {
       final user = userProvider.user;
 
       if (_nameController.text.isEmpty ||
-          _organizationController.text.isEmpty ||
-          _issueDate == null) {
+          _organizationController.text.isEmpty) {
         showDialog(
           context: context,
           builder:
@@ -92,7 +105,7 @@ class _CertificateModalState extends State<CertificateModal> {
         return;
       }
 
-      if (_hasExpiryDate && _expiryDate == null) {
+      if (!_isNoExpiry && _endDate == null) {
         showDialog(
           context: context,
           builder:
@@ -107,7 +120,9 @@ class _CertificateModalState extends State<CertificateModal> {
         return;
       }
 
-      if (_expiryDate != null && _expiryDate!.isBefore(_issueDate!)) {
+      if (_endDate != null &&
+          _startDate != null &&
+          _endDate!.isBefore(_startDate!)) {
         showDialog(
           context: context,
           builder:
@@ -122,35 +137,46 @@ class _CertificateModalState extends State<CertificateModal> {
         return;
       }
 
+      if (!_isNoExpiry &&
+          _endDate != null &&
+          _startDate != null &&
+          _endDate!.isBefore(_startDate!)) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Ngày kết thúc không thể trước ngày bắt đầu'),
+              ),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
       final params = {
-        'name': _nameController.text,
-        'organization': _organizationController.text,
-        'issue_date': _issueDate!.toIso8601String(),
-        'expiry_date': _hasExpiryDate ? _expiryDate!.toIso8601String() : null,
-        'credential_id':
-            _credentialIdController.text.isNotEmpty
-                ? _credentialIdController.text
-                : null,
-        'credential_url':
+        'candidate_id': "67e74c5cf5890770fa4b7189",
+        'certificate_name': _nameController.text,
+        'organization_name': _organizationController.text,
+        'start_date': _startDate != null ? _startDate!.toIso8601String() : null,
+        'end_date':
+            _isNoExpiry
+                ? null
+                : (_endDate != null ? _endDate!.toIso8601String() : null),
+        'link_certificate':
             _credentialUrlController.text.isNotEmpty
                 ? _credentialUrlController.text
                 : null,
-        'user_id': user!.id,
+        'img_certificate': null,
+        'is_not_expired': _isNoExpiry,
       };
 
       if (isEditing) {
         params['_id'] = widget.certificate['_id'];
         await widget.onUpdate!(params);
       } else {
-        final response = await ApiService().post(
-          dotenv.env['API_URL']! + "certificates",
-          params,
-          token: await SecureStorageService().getRefreshToken(),
-        );
-        if (response['statusCode'] == 201) {
-          widget.onUpdate!(params);
-          Navigator.pop(context);
-        }
+        await widget.onCreate!(params);
       }
     } catch (e) {
       print("Error submitting certificate: $e");
@@ -235,70 +261,64 @@ class _CertificateModalState extends State<CertificateModal> {
                   ),
                   SizedBox(height: 16),
                   CustomInput(
-                    label: 'Tổ chức cấp',
+                    label: 'Tên tổ chức',
                     hint: 'Bắt buộc',
                     controller: _organizationController,
                     type: InputType.input,
                     required: true,
                   ),
                   SizedBox(height: 16),
-                  InkWell(
-                    onTap: () => _selectDate(context, true),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Ngày cấp',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _issueDate == null
-                            ? 'mm / yyyy'
-                            : '${_issueDate!.month} / ${_issueDate!.year}',
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
+
                   Row(
                     children: [
                       Checkbox(
-                        value: _hasExpiryDate,
+                        value: _isNoExpiry,
                         onChanged: (value) {
                           setState(() {
-                            _hasExpiryDate = value ?? false;
-                            if (!_hasExpiryDate) {
-                              _expiryDate = null;
+                            _isNoExpiry = value ?? false;
+                            if (_isNoExpiry) {
+                              _endDate = null;
                             }
                           });
                         },
                       ),
-                      Text('Có ngày hết hạn'),
+                      Text('Vô hạn'),
                     ],
                   ),
-                  if (_hasExpiryDate) ...[
-                    SizedBox(height: 8),
+                  SizedBox(height: 16),
+                  InkWell(
+                    onTap: () => _selectDate(context, false, isStartDate: true),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Ngày bắt đầu',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _startDate == null
+                            ? 'mm / yyyy'
+                            : '${_startDate!.month} / ${_startDate!.year}',
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  if (!_isNoExpiry) ...[
                     InkWell(
-                      onTap: () => _selectDate(context, false),
+                      onTap: () => _selectDate(context, false, isEndDate: true),
                       child: InputDecorator(
                         decoration: InputDecoration(
-                          labelText: 'Ngày hết hạn',
+                          labelText: 'Ngày kết thúc',
                           border: OutlineInputBorder(),
                         ),
                         child: Text(
-                          _expiryDate == null
+                          _endDate == null
                               ? 'mm / yyyy'
-                              : '${_expiryDate!.month} / ${_expiryDate!.year}',
+                              : '${_endDate!.month} / ${_endDate!.year}',
                         ),
                       ),
                     ),
+                    SizedBox(height: 16),
                   ],
-                  SizedBox(height: 16),
-                  CustomInput(
-                    label: "Mã chứng chỉ",
-                    hint: "Mã chứng chỉ (không bắt buộc)",
-                    controller: _credentialIdController,
-                    type: InputType.input,
-                    required: false,
-                  ),
-                  SizedBox(height: 16),
+
                   CustomInput(
                     label: "Liên kết chứng chỉ",
                     hint: "Liên kết đến chứng chỉ (không bắt buộc)",

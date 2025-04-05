@@ -1,59 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:hiredev/components/Section/Section.dart';
+import 'package:hiredev/modals/CourseModal.dart';
 import 'package:hiredev/modals/EducationModal.dart';
+import 'package:hiredev/modals/ExperienceModal.dart';
+import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/services/CourseServices.dart';
 import 'package:hiredev/services/EducationServices.dart';
+import 'package:hiredev/services/ExperienceServices.dart';
+import 'package:provider/provider.dart';
 
-class EducationComponent extends StatefulWidget {
+class ExperienceComponent extends StatefulWidget {
   @override
-  _EducationComponentState createState() => _EducationComponentState();
+  _ExperienceComponentState createState() => _ExperienceComponentState();
 }
 
-class _EducationComponentState extends State<EducationComponent> {
-  List<dynamic> educations = [];
+class _ExperienceComponentState extends State<ExperienceComponent> {
+  List<dynamic> experiences = [];
   @override
   void initState() {
     super.initState();
-    getEducationOfCandidate();
+    getExperienceOfCandidate(1, 10);
   }
 
-  Future<void> getEducationOfCandidate() async {
-    final response = await EducationServices.getEducationByUserToken();
-    print("getEducationOfCandidate: $response");
+  Future<void> getExperienceOfCandidate(int current, int pageSize) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    final response = await ExperienceServices.getExperienceByUserToken(
+      user!.id!,
+      current,
+      pageSize,
+    );
+    print("duydeptraivcl: $response");
+
     if (response['statusCode'] == 200) {
       setState(() {
-        educations = response['data'];
+        experiences = response['data'];
       });
     }
   }
 
-  Future<void> onUpdateEducation(dynamic education) async {
-    final response = await EducationServices.updateEducation(
-      education['_id'],
-      education,
+  Future<void> onUpdateExperience(dynamic experience) async {
+    final response = await ExperienceServices.updateExperience(
+      experience['_id'],
+      experience,
     );
 
     if (response['statusCode'] == 200) {
-      getEducationOfCandidate();
+      getExperienceOfCandidate(1, 10);
       Navigator.pop(context);
     }
   }
 
-  Future<void> createEducation(dynamic education) async {
-    final response = await EducationServices.createEducation(education);
-    print("createEducation1: $response");
+  Future<void> createExperience(dynamic experience) async {
+    final response = await ExperienceServices.createExperience(experience);
+    print("createExperience1: $response");
     if (response['statusCode'] == 201) {
-      getEducationOfCandidate();
+      getExperienceOfCandidate(1, 10);
       Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print("experiences: $experiences");
     return SectionComponent(
-      title: 'Học vấn',
-      description:
-          'Thể hiện những kiến thức học vấn bạn có cho công việc của mình.',
-      items: educations,
+      title: 'Kinh nghiệm làm việc',
+      description: 'Thể hiện những kinh nghiệm làm việc bạn đã có.',
+      items: experiences,
       renderItem: (item) {
         return GestureDetector(
           onTap: () {
@@ -78,10 +91,10 @@ class _EducationComponentState extends State<EducationComponent> {
                               return Container(
                                 height:
                                     MediaQuery.of(context).size.height * 0.94,
-                                child: EducationModal(
-                                  education: item,
-                                  onUpdate: onUpdateEducation,
-                                  onCreate: createEducation,
+                                child: ExperienceModal(
+                                  experience: item,
+                                  onUpdate: onUpdateExperience,
+                                  onCreate: createExperience,
                                 ),
                               );
                             },
@@ -112,12 +125,15 @@ class _EducationComponentState extends State<EducationComponent> {
                                       Navigator.pop(context);
                                       // Delete education
                                       try {
-                                        await EducationServices.deleteEducation(
+                                        await ExperienceServices.deleteExperience(
                                           item['_id'],
                                         );
-                                        getEducationOfCandidate(); // Refresh the list
+                                        getExperienceOfCandidate(
+                                          1,
+                                          10,
+                                        ); // Refresh the list
                                       } catch (e) {
-                                        print("Error deleting education: $e");
+                                        print("Error deleting course: $e");
                                       }
                                     },
                                     child: Text(
@@ -160,7 +176,7 @@ class _EducationComponentState extends State<EducationComponent> {
                   children: [
                     Expanded(
                       child: Text(
-                        item['school'] ?? '',
+                        item['company'] ?? '',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.0,
@@ -170,7 +186,7 @@ class _EducationComponentState extends State<EducationComponent> {
                     Icon(Icons.more_vert, color: Colors.grey),
                   ],
                 ),
-                Text(item['major'] ?? '', style: TextStyle(fontSize: 14.0)),
+                Text(item['position'] ?? '', style: TextStyle(fontSize: 14.0)),
                 SizedBox(height: 4.0),
                 Text(
                   '${DateTime.parse(item['start_date']).month}/${DateTime.parse(item['start_date']).year} - ${item['end_date'] != null ? "${DateTime.parse(item['end_date']).month}/${DateTime.parse(item['end_date']).year}" : 'Hiện tại'}',
@@ -183,7 +199,7 @@ class _EducationComponentState extends State<EducationComponent> {
       },
       modalContent: Container(
         height: MediaQuery.of(context).size.height * 0.94,
-        child: EducationModal(onCreate: createEducation),
+        child: ExperienceModal(onCreate: createExperience),
       ),
     );
   }

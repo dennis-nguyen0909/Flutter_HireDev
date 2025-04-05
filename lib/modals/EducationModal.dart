@@ -12,7 +12,8 @@ import 'package:provider/provider.dart';
 class EducationModal extends StatefulWidget {
   final dynamic education;
   final Function(dynamic)? onUpdate;
-  EducationModal({this.education, this.onUpdate});
+  final Function(dynamic)? onCreate;
+  EducationModal({this.education, this.onUpdate, this.onCreate});
   @override
   _EducationModalState createState() => _EducationModalState();
 }
@@ -73,6 +74,8 @@ class _EducationModalState extends State<EducationModal> {
       });
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = userProvider.user;
+
+      // Validate all required fields
       if (_schoolController.text.isEmpty ||
           _majorController.text.isEmpty ||
           _descriptionController.text.isEmpty) {
@@ -84,6 +87,9 @@ class _EducationModalState extends State<EducationModal> {
                 content: Text('Vui lòng điền đầy đủ thông tin'),
               ),
         );
+        setState(() {
+          isLoading = false;
+        });
         return;
       }
 
@@ -96,8 +102,12 @@ class _EducationModalState extends State<EducationModal> {
                 content: Text('Vui lòng chọn ngày bắt đầu'),
               ),
         );
+        setState(() {
+          isLoading = false;
+        });
         return;
       }
+
       if (!_currentlyStudying && _toDate == null) {
         showDialog(
           context: context,
@@ -107,9 +117,15 @@ class _EducationModalState extends State<EducationModal> {
                 content: Text('Vui lòng chọn ngày kết thúc'),
               ),
         );
+        setState(() {
+          isLoading = false;
+        });
         return;
       }
-      if (_toDate != null && _toDate!.isBefore(_fromDate!)) {
+
+      if (_toDate != null &&
+          _fromDate != null &&
+          _toDate!.isBefore(_fromDate!)) {
         showDialog(
           context: context,
           builder:
@@ -118,28 +134,24 @@ class _EducationModalState extends State<EducationModal> {
                 content: Text('Ngày kết thúc không thể trước ngày bắt đầu'),
               ),
         );
+        setState(() {
+          isLoading = false;
+        });
         return;
       }
-      if (_schoolController.text.isEmpty) {
+
+      if (user == null) {
         showDialog(
           context: context,
           builder:
               (context) => AlertDialog(
-                title: Text('Thông báo'),
-                content: Text('Vui lòng điền trường học'),
+                title: Text('Lỗi'),
+                content: Text('Không tìm thấy thông tin người dùng'),
               ),
         );
-        return;
-      }
-      if (_majorController.text.isEmpty) {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Thông báo'),
-                content: Text('Vui lòng điền chuyên ngành'),
-              ),
-        );
+        setState(() {
+          isLoading = false;
+        });
         return;
       }
 
@@ -148,24 +160,36 @@ class _EducationModalState extends State<EducationModal> {
         'description': _descriptionController.text,
         'major': _majorController.text,
         'school': _schoolController.text,
-        'start_date': _fromDate!.toIso8601String(),
+        'start_date':
+            _fromDate?.toIso8601String() ?? DateTime.now().toIso8601String(),
         'end_date': _currentlyStudying ? null : _toDate?.toIso8601String(),
-        'user_id': user!.id,
+        'user_id': user.id,
       };
 
-      if (isEditing) {
+      // Check if both callbacks are provided
+      if (isEditing && widget.onUpdate != null) {
         params['_id'] = widget.education['_id'];
         await widget.onUpdate!(params);
+      } else if (!isEditing && widget.onCreate != null) {
+        print("createEducation: $params");
+        print("widget.onCreate: ${widget.onCreate}");
+        await widget.onCreate!(params);
       } else {
-        final response = await ApiService().post(
-          dotenv.env['API_URL']! + "educations",
-          params,
-          token: await SecureStorageService().getRefreshToken(),
+        // Show a more user-friendly error message
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Lỗi hệ thống'),
+                content: Text(
+                  'Không thể lưu thông tin học vấn. Vui lòng thử lại sau.',
+                ),
+              ),
         );
-        if (response['statusCode'] == 201) {
-          widget.onUpdate!(params);
-          Navigator.pop(context);
-        }
+        print(
+          "Missing callback: isEditing=$isEditing, onUpdate=${widget.onUpdate != null}, onCreate=${widget.onCreate != null}",
+        );
+        return;
       }
     } catch (e) {
       print("Error submitting education: $e");
@@ -174,7 +198,9 @@ class _EducationModalState extends State<EducationModal> {
         builder:
             (context) => AlertDialog(
               title: Text('Lỗi'),
-              content: Text('Đã xảy ra lỗi khi lưu thông tin học vấn'),
+              content: Text(
+                'Đã xảy ra lỗi khi lưu thông tin học vấn: ${e.toString()}',
+              ),
             ),
       );
     } finally {

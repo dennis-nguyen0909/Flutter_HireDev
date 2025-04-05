@@ -11,7 +11,8 @@ import 'package:provider/provider.dart';
 class CourseModal extends StatefulWidget {
   final dynamic course;
   final Function(dynamic)? onUpdate;
-  CourseModal({this.course, this.onUpdate});
+  final Function(dynamic)? onCreate;
+  CourseModal({this.course, this.onUpdate, this.onCreate});
   @override
   _CourseModalState createState() => _CourseModalState();
 }
@@ -19,23 +20,23 @@ class CourseModal extends StatefulWidget {
 class _CourseModalState extends State<CourseModal> {
   DateTime? _startDate;
   DateTime? _endDate;
-  TextEditingController _nameController = TextEditingController();
+  TextEditingController _courseNameController = TextEditingController();
+  TextEditingController _organizationNameController = TextEditingController();
   TextEditingController _descriptionController = TextEditingController();
-  TextEditingController _organizationController = TextEditingController();
-  TextEditingController _certificateUrlController = TextEditingController();
+  TextEditingController _courseLinkController = TextEditingController();
   bool isLoading = false;
   bool isEditing = false;
-  bool _currentlyStudying = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.course != null) {
       isEditing = true;
-      _nameController.text = widget.course['name'] ?? '';
+      _courseNameController.text = widget.course['course_name'] ?? '';
+      _organizationNameController.text =
+          widget.course['organization_name'] ?? '';
       _descriptionController.text = widget.course['description'] ?? '';
-      _organizationController.text = widget.course['organization'] ?? '';
-      _certificateUrlController.text = widget.course['certificate_url'] ?? '';
+      _courseLinkController.text = widget.course['course_link'] ?? '';
       _startDate =
           widget.course['start_date'] != null
               ? DateTime.parse(widget.course['start_date'])
@@ -44,7 +45,6 @@ class _CourseModalState extends State<CourseModal> {
           widget.course['end_date'] != null
               ? DateTime.parse(widget.course['end_date'])
               : null;
-      _currentlyStudying = widget.course['currently_studying'] ?? false;
     }
   }
 
@@ -74,9 +74,10 @@ class _CourseModalState extends State<CourseModal> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = userProvider.user;
 
-      if (_nameController.text.isEmpty ||
-          _organizationController.text.isEmpty ||
-          _startDate == null) {
+      if (_courseNameController.text.isEmpty ||
+          _organizationNameController.text.isEmpty ||
+          _startDate == null ||
+          _endDate == null) {
         showDialog(
           context: context,
           builder:
@@ -91,22 +92,7 @@ class _CourseModalState extends State<CourseModal> {
         return;
       }
 
-      if (!_currentlyStudying && _endDate == null) {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Thông báo'),
-                content: Text('Vui lòng chọn ngày kết thúc'),
-              ),
-        );
-        setState(() {
-          isLoading = false;
-        });
-        return;
-      }
-
-      if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+      if (_endDate!.isBefore(_startDate!)) {
         showDialog(
           context: context,
           builder:
@@ -122,32 +108,24 @@ class _CourseModalState extends State<CourseModal> {
       }
 
       final params = {
-        'name': _nameController.text,
-        'description': _descriptionController.text,
-        'organization': _organizationController.text,
-        'start_date': _startDate!.toIso8601String(),
-        'end_date': _currentlyStudying ? null : _endDate?.toIso8601String(),
-        'currently_studying': _currentlyStudying,
-        'certificate_url':
-            _certificateUrlController.text.isNotEmpty
-                ? _certificateUrlController.text
-                : null,
         'user_id': user!.id,
+        'course_name': _courseNameController.text,
+        'organization_name': _organizationNameController.text,
+        'start_date': _startDate!.toIso8601String(),
+        'end_date': _endDate!.toIso8601String(),
+        'description': _descriptionController.text,
       };
+
+      // Only add course_link if it's not empty
+      if (_courseLinkController.text.isNotEmpty) {
+        params['course_link'] = _courseLinkController.text;
+      }
 
       if (isEditing) {
         params['_id'] = widget.course['_id'];
         await widget.onUpdate!(params);
       } else {
-        final response = await ApiService().post(
-          dotenv.env['API_URL']! + "courses",
-          params,
-          token: await SecureStorageService().getRefreshToken(),
-        );
-        if (response['statusCode'] == 201) {
-          widget.onUpdate!(params);
-          Navigator.pop(context);
-        }
+        await widget.onCreate!(params);
       }
     } catch (e) {
       print("Error submitting course: $e");
@@ -226,7 +204,7 @@ class _CourseModalState extends State<CourseModal> {
                   CustomInput(
                     label: 'Tên khóa học',
                     hint: 'Bắt buộc',
-                    controller: _nameController,
+                    controller: _courseNameController,
                     type: InputType.input,
                     required: true,
                   ),
@@ -234,7 +212,7 @@ class _CourseModalState extends State<CourseModal> {
                   CustomInput(
                     label: 'Tổ chức đào tạo',
                     hint: 'Bắt buộc',
-                    controller: _organizationController,
+                    controller: _organizationNameController,
                     type: InputType.input,
                     required: true,
                   ),
@@ -260,40 +238,20 @@ class _CourseModalState extends State<CourseModal> {
                       SizedBox(width: 16),
                       Expanded(
                         child: InkWell(
-                          onTap:
-                              _currentlyStudying
-                                  ? null
-                                  : () => _selectDate(context, false),
+                          onTap: () => _selectDate(context, false),
                           child: InputDecorator(
                             decoration: InputDecoration(
                               labelText: 'Ngày kết thúc',
                               border: OutlineInputBorder(),
-                              enabled: !_currentlyStudying,
                             ),
                             child: Text(
-                              _currentlyStudying
-                                  ? 'Hiện tại'
-                                  : _endDate == null
+                              _endDate == null
                                   ? 'mm / yyyy'
                                   : '${_endDate!.month} / ${_endDate!.year}',
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _currentlyStudying,
-                        onChanged: (value) {
-                          setState(() {
-                            _currentlyStudying = value ?? false;
-                          });
-                        },
-                      ),
-                      Text('Đang học'),
                     ],
                   ),
                   SizedBox(height: 16),
@@ -306,9 +264,9 @@ class _CourseModalState extends State<CourseModal> {
                   ),
                   SizedBox(height: 16),
                   CustomInput(
-                    label: "Liên kết chứng chỉ",
-                    hint: "Liên kết đến chứng chỉ (không bắt buộc)",
-                    controller: _certificateUrlController,
+                    label: "Liên kết khóa học",
+                    hint: "Liên kết đến khóa học (không bắt buộc)",
+                    controller: _courseLinkController,
                     type: InputType.input,
                     required: false,
                   ),
@@ -330,10 +288,10 @@ class _CourseModalState extends State<CourseModal> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _courseNameController.dispose();
+    _organizationNameController.dispose();
     _descriptionController.dispose();
-    _organizationController.dispose();
-    _certificateUrlController.dispose();
+    _courseLinkController.dispose();
     super.dispose();
   }
 }

@@ -11,7 +11,8 @@ import 'package:provider/provider.dart';
 class ExperienceModal extends StatefulWidget {
   final dynamic experience;
   final Function(dynamic)? onUpdate;
-  ExperienceModal({this.experience, this.onUpdate});
+  final Function(dynamic)? onCreate;
+  ExperienceModal({this.experience, this.onUpdate, this.onCreate});
   @override
   _ExperienceModalState createState() => _ExperienceModalState();
 }
@@ -22,8 +23,6 @@ class _ExperienceModalState extends State<ExperienceModal> {
   TextEditingController _companyNameController = TextEditingController();
   TextEditingController _positionController = TextEditingController();
   TextEditingController _descriptionController = TextEditingController();
-  TextEditingController _locationController = TextEditingController();
-  TextEditingController _responsibilitiesController = TextEditingController();
   bool isLoading = false;
   bool isEditing = false;
   bool _isCurrent = false;
@@ -33,12 +32,9 @@ class _ExperienceModalState extends State<ExperienceModal> {
     super.initState();
     if (widget.experience != null) {
       isEditing = true;
-      _companyNameController.text = widget.experience['company_name'] ?? '';
+      _companyNameController.text = widget.experience['company'] ?? '';
       _positionController.text = widget.experience['position'] ?? '';
       _descriptionController.text = widget.experience['description'] ?? '';
-      _locationController.text = widget.experience['location'] ?? '';
-      _responsibilitiesController.text =
-          widget.experience['responsibilities']?.join('\n') ?? '';
       _startDate =
           widget.experience['start_date'] != null
               ? DateTime.parse(widget.experience['start_date'])
@@ -47,7 +43,7 @@ class _ExperienceModalState extends State<ExperienceModal> {
           widget.experience['end_date'] != null
               ? DateTime.parse(widget.experience['end_date'])
               : null;
-      _isCurrent = widget.experience['is_current'] ?? false;
+      _isCurrent = widget.experience['currently_working'] ?? false;
     }
   }
 
@@ -125,18 +121,12 @@ class _ExperienceModalState extends State<ExperienceModal> {
       }
 
       final params = {
-        'company_name': _companyNameController.text,
+        'company': _companyNameController.text,
         'position': _positionController.text,
         'description': _descriptionController.text,
-        'location': _locationController.text,
-        'responsibilities':
-            _responsibilitiesController.text
-                .split('\n')
-                .where((e) => e.isNotEmpty)
-                .toList(),
         'start_date': _startDate!.toIso8601String(),
         'end_date': _isCurrent ? null : _endDate?.toIso8601String(),
-        'is_current': _isCurrent,
+        'currently_working': _isCurrent,
         'user_id': user!.id,
       };
 
@@ -144,15 +134,7 @@ class _ExperienceModalState extends State<ExperienceModal> {
         params['_id'] = widget.experience['_id'];
         await widget.onUpdate!(params);
       } else {
-        final response = await ApiService().post(
-          dotenv.env['API_URL']! + "experiences",
-          params,
-          token: await SecureStorageService().getRefreshToken(),
-        );
-        if (response['statusCode'] == 201) {
-          widget.onUpdate!(params);
-          Navigator.pop(context);
-        }
+        await widget.onCreate!(params);
       }
     } catch (e) {
       print("Error submitting experience: $e");
@@ -239,7 +221,7 @@ class _ExperienceModalState extends State<ExperienceModal> {
                   ),
                   SizedBox(height: 16),
                   CustomInput(
-                    label: 'Vị trí',
+                    label: 'Chức vụ',
                     hint: 'Bắt buộc',
                     controller: _positionController,
                     type: InputType.input,
@@ -305,14 +287,6 @@ class _ExperienceModalState extends State<ExperienceModal> {
                   ),
                   SizedBox(height: 16),
                   CustomInput(
-                    label: "Địa điểm",
-                    hint: "Địa điểm làm việc",
-                    controller: _locationController,
-                    type: InputType.input,
-                    required: true,
-                  ),
-                  SizedBox(height: 16),
-                  CustomInput(
                     label: "Mô tả",
                     hint: "Mô tả về công việc",
                     controller: _descriptionController,
@@ -348,8 +322,6 @@ class _ExperienceModalState extends State<ExperienceModal> {
     _companyNameController.dispose();
     _positionController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
-    _responsibilitiesController.dispose();
     super.dispose();
   }
 }
