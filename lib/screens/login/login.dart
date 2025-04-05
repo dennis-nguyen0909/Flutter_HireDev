@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hiredev/colors/colors.dart';
 import 'package:hiredev/provider/user_provider.dart';
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final SecureStorageService secureStorageService = SecureStorageService();
-
+  bool isLoading = false;
   Future<void> retryActive(String email) async {
     final response = await ApiService().post(
       dotenv.env['API_URL']! + "auth/retry-active",
@@ -34,18 +35,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> fetchData(String username, String password) async {
     try {
+      setState(() {
+        isLoading = true;
+      });
       // Sử dụng ApiService để gọi POST request
       final response = await ApiService().post(
         dotenv.env['API_URL']! + "auth/login",
         {'username': username, 'password': password},
         token: await secureStorageService.getAccessToken(),
       );
-      if (response['statusCode'] == 400) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${response['message']}')));
-        return;
-      }
+      print("response: ${response}");
       if (response['statusCode'] == 400 && response['code'] == 'not_active') {
         await retryActive(username);
         Navigator.push(
@@ -60,7 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
-      print("response: ${response}");
+      if (response['statusCode'] == 400) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${response['message']}')));
+        return;
+      }
       // Kiểm tra nếu phản hồi có 'data' và 'user'
       if (response != null &&
           response['data'] != null &&
@@ -89,6 +93,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('${e.toString()}')));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -115,36 +123,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loginWithFacebook() async {
     try {
-      final result = await FlutterWebAuth.authenticate(
-        url: dotenv.env['API_LOGIN_FACEBOOK']!,
-        callbackUrlScheme: "myapp",
-      );
+      final LoginResult result = await FacebookAuth.instance.login();
+      print("result: ${result}");
+      if (result.status == LoginStatus.success) {
+        final userData = await FacebookAuth.instance.getUserData();
+        print("userData: ${userData}");
 
-      final uri = Uri.parse(result);
-      final accessToken = uri.queryParameters['access_token'];
-      final refreshToken = uri.queryParameters['refresh_token'];
-      // Bạn cần một API endpoint để xác thực Facebook token và lấy user_id
-      // Ví dụ:
-      // final response = await ApiService().post(
-      //   dotenv.env['API_URL']! + "auth/facebook",
-      //   {'access_token': accessToken},
-      // );
-      // if (response != null && response['data'] != null && response['data']['_id'] != null) {
-      //   final userId = response['data']['_id'];
-      //   await secureStorageService.saveToken(accessToken, refreshToken ?? '');
-      //   final userProvider = Provider.of<UserProvider>(context, listen: false);
-      //   await userProvider.fetchUserDetails(userId);
-      //   Navigator.pushReplacement(
-      //     context,
-      //     MaterialPageRoute(builder: (context) => AppMainScreen()),
-      //   );
-      // } else {
-      //   // Xử lý lỗi
-      // }
-      print('Access token: $accessToken');
-      print('Refresh token: $refreshToken');
-    } catch (e) {
-      print('Lỗi đăng nhậpqqq: $e');
+        // Check if last_name or first_name is null before concatenation
+        String fullName = '';
+        if (userData['last_name'] != null && userData['first_name'] != null) {
+          fullName = userData['last_name'] + ' ' + userData['first_name'];
+        } else if (userData['name'] != null) {
+          fullName = userData['name'];
+        } else {
+          fullName = 'Facebook User'; // Default name if no name data available
+        }
+
+        final params = {
+          'email': userData['email'] ?? '',
+          'full_name': fullName,
+          'avatar': userData['picture']?['data']?['url'] ?? '',
+          'password': '',
+          'authProvider': "6770b193b50eecacbb8e0c61",
+          'account_type': "6770b193b50eecacbb8e0c61",
+        };
+        final response = await ApiService().post(
+          dotenv.env['API_URL']! + "users/validate-facebook",
+          params,
+        );
+        print("response: ${response}");
+      } else {
+        print(result.status);
+        print(result.message);
+      }
+    } catch (error) {
+      print(error);
     }
   }
 
@@ -240,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _handleLogin,
                     child: Text(
-                      "Đăng nhập",
+                      isLoading ? "Đang đăng nhập..." : "Đăng nhập",
                       style: TextStyle(
                         color: AppColors.primaryColor,
                         fontWeight: FontWeight.w800,
