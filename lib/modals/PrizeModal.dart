@@ -1,201 +1,288 @@
 import 'package:flutter/material.dart';
-import 'package:hiredev/models/PrizeModel.dart';
-import 'package:hiredev/services/profileServices.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hiredev/colors/colors.dart';
+import 'package:hiredev/components/ButtonCustom/ButtonCustom.dart';
+import 'package:hiredev/components/CustomInput/CustomInput.dart';
 import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/services/PrizeServices.dart';
+import 'package:hiredev/services/apiServices.dart';
+import 'package:hiredev/utils/secure_storage_service.dart';
 import 'package:provider/provider.dart';
 
 class PrizeModal extends StatefulWidget {
+  final dynamic prize;
+  final Function(dynamic)? onUpdate;
+  PrizeModal({this.prize, this.onUpdate});
   @override
   _PrizeModalState createState() => _PrizeModalState();
 }
 
 class _PrizeModalState extends State<PrizeModal> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _dateController = TextEditingController();
-  final _organizationController = TextEditingController();
-  List<PrizeModel> _prizes = [];
-  bool _isLoading = true;
+  DateTime? _date;
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _descriptionController = TextEditingController();
+  TextEditingController _organizationController = TextEditingController();
+  TextEditingController _linkController = TextEditingController();
+  bool isLoading = false;
+  bool isEditing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPrizes();
+    if (widget.prize != null) {
+      isEditing = true;
+      _nameController.text = widget.prize['prize_name'] ?? '';
+      _descriptionController.text = widget.prize['description'] ?? '';
+      _organizationController.text = widget.prize['organization_name'] ?? '';
+      _linkController.text = widget.prize['prize_link'] ?? '';
+      _date =
+          widget.prize['date_of_receipt'] != null
+              ? DateTime.parse(widget.prize['date_of_receipt'])
+              : null;
+    }
   }
 
-  Future<void> _loadPrizes() async {
-    setState(() => _isLoading = true);
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _date = picked;
+      });
+    }
+  }
+
+  Future<void> onSubmit() async {
     try {
-      final user = context.read<UserProvider>().user;
-      // final response = await ProfileServices.getPrizes(user?.id ?? '');
-      // if (response['statusCode'] == 200) {
-      //   setState(() {
-      //     _prizes =
-      //         (response['data'] as List)
-      //             .map((item) => PrizeModel.fromJson(item))
-      //             .toList();
-      //   });
-      // }
-    } catch (e) {
-      print('Error loading prizes: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+      setState(() {
+        isLoading = true;
+      });
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = userProvider.user;
 
-  Future<void> _savePrize() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      try {
-        final user = context.read<UserProvider>().user;
-        final prize = PrizeModel(
-          name: _nameController.text,
-          description: _descriptionController.text,
-          date: _dateController.text,
-          organization: _organizationController.text,
-          userId: user?.id,
+      if (_nameController.text.isEmpty ||
+          _organizationController.text.isEmpty ||
+          _descriptionController.text.isEmpty) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Vui lòng điền đầy đủ thông tin'),
+              ),
         );
-
-        // final response = await ProfileServices.createPrize(prize.toJson());
-        // if (response['statusCode'] == 201) {
-        //   _loadPrizes();
-        //   _clearForm();
-        //   ScaffoldMessenger.of(
-        //     context,
-        //   ).showSnackBar(SnackBar(content: Text('Prize added successfully')));
-        // }
-      } catch (e) {
-        print('Error saving prize: $e');
+        setState(() {
+          isLoading = false;
+        });
+        return;
       }
-    }
-  }
 
-  void _clearForm() {
-    _nameController.clear();
-    _descriptionController.clear();
-    _dateController.clear();
-    _organizationController.clear();
+      if (_date == null) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Vui lòng chọn ngày nhận giải'),
+              ),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      if (user == null) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Lỗi'),
+                content: Text('Không thể xác định thông tin người dùng'),
+              ),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      final params = {
+        'prize_name': _nameController.text,
+        'description': _descriptionController.text,
+        'organization_name': _organizationController.text,
+        'date_of_receipt': _date!.toIso8601String(),
+        'prize_link':
+            _linkController.text.isNotEmpty ? _linkController.text : null,
+        'prize_image': null,
+        'user_id': user.id,
+      };
+
+      if (isEditing) {
+        if (widget.onUpdate != null) {
+          params['_id'] = widget.prize['_id'];
+          await widget.onUpdate!(params);
+        } else {
+          throw Exception("Update callback is null");
+        }
+      } else {
+        final response = await PrizeServices.createPrize(params);
+        print("response: ${response['statusCode']}");
+        if (response['statusCode'] == 201) {
+          if (widget.onUpdate != null) {
+            widget.onUpdate!(params);
+          }
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      print("Error submitting prize: $e");
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Lỗi'),
+              content: Text(
+                'Đã xảy ra lỗi khi lưu thông tin giải thưởng: ${e.toString()}',
+              ),
+            ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Prizes & Awards'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => _buildPrizeForm(),
-              );
-            },
-          ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: _prizes.length,
-                itemBuilder: (context, index) {
-                  final prize = _prizes[index];
-                  return ListTile(
-                    title: Text(prize.name ?? ''),
-                    subtitle: Text('${prize.organization} - ${prize.date}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            // Implement edit functionality
-                          },
+    return isLoading
+        ? Center(child: CircularProgressIndicator())
+        : Container(
+          color: Colors.white,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isEditing
+                            ? 'Chỉnh sửa giải thưởng'
+                            : 'Thêm giải thưởng',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            // Implement delete functionality
-                          },
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.3),
+                              spreadRadius: 1,
+                              blurRadius: 2,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
                         ),
-                      ],
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.black87,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          padding: EdgeInsets.all(8),
+                          constraints: BoxConstraints(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: 'Tên giải thưởng',
+                    hint: 'Bắt buộc',
+                    controller: _nameController,
+                    type: InputType.input,
+                    required: true,
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: 'Tổ chức trao giải',
+                    hint: 'Bắt buộc',
+                    controller: _organizationController,
+                    type: InputType.input,
+                    required: true,
+                  ),
+                  SizedBox(height: 16),
+                  InkWell(
+                    onTap: () => _selectDate(context),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Ngày nhận giải',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        _date == null
+                            ? 'mm / yyyy'
+                            : '${_date!.month} / ${_date!.year}',
+                      ),
                     ),
-                  );
-                },
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: "Mô tả",
+                    hint: "Mô tả về giải thưởng",
+                    controller: _descriptionController,
+                    type: InputType.textarea,
+                    required: true,
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: "Liên kết",
+                    hint: "Liên kết đến giải thưởng (không bắt buộc)",
+                    controller: _linkController,
+                    type: InputType.input,
+                    required: false,
+                  ),
+                  SizedBox(height: 24),
+                  ButtonCustom(
+                    text: isEditing ? "Cập nhật" : "Lưu",
+                    onPressed: () {
+                      onSubmit();
+                    },
+                    backgroundColor: AppColors.primaryColor,
+                    textColor: Colors.white,
+                  ),
+                ],
               ),
-    );
-  }
-
-  Widget _buildPrizeForm() {
-    return AlertDialog(
-      title: Text('Add Prize/Award'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Prize Name'),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) {
-                    return 'Please enter prize name';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-              TextFormField(
-                controller: _dateController,
-                decoration: InputDecoration(labelText: 'Date'),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                  );
-                  if (date != null) {
-                    _dateController.text = date.toString().split(' ')[0];
-                  }
-                },
-              ),
-              TextFormField(
-                controller: _organizationController,
-                decoration: InputDecoration(labelText: 'Organization'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _savePrize();
-            Navigator.pop(context);
-          },
-          child: Text('Save'),
-        ),
-      ],
-    );
+        );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _dateController.dispose();
     _organizationController.dispose();
+    _linkController.dispose();
     super.dispose();
   }
 }

@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:hiredev/components/EducationComponent/EducationComponent.dart';
+import 'package:hiredev/components/PrizeComponent/PrizeComponent.dart';
 import 'package:hiredev/components/Section/Section.dart';
 import 'package:hiredev/modals/EducationModal.dart';
 import 'package:hiredev/modals/ModalBasicInformation.dart';
 import 'package:hiredev/models/UserMode.dart';
 import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/services/EducationServices.dart';
 import 'package:hiredev/services/fileService.dart';
 import 'package:hiredev/services/profileServices.dart';
 import 'package:hiredev/services/userServices.dart';
@@ -33,6 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoadingApplied = true;
   bool isLoadingSaved = true;
   String? _selectedImagePath;
+  List<dynamic> educations = [];
   @override
   void initState() {
     super.initState();
@@ -522,28 +526,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SectionComponent(
-                  title: 'Học vấn',
-                  description:
-                      'Thể hiện những kiến thức học vấn bạn có cho công việc của mình.',
-                  modalContent: Container(
-                    height: MediaQuery.of(context).size.height * 0.94,
-                    child: EducationModal(),
-                  ),
-                ),
+                child: EducationComponent(),
               ),
               SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: SectionComponent(
-                  title: 'Giải thưởng',
-                  description:
-                      'Thêm các giải thưởng và thành tích bạn đã đạt được.',
-                  modalContent: Container(
-                    height: MediaQuery.of(context).size.height * 0.94,
-                    child: PrizeModal(),
-                  ),
-                ),
+                child: PrizeComponent(),
               ),
               SizedBox(height: 16),
               Padding(
