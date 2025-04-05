@@ -1,228 +1,337 @@
 import 'package:flutter/material.dart';
-import 'package:hiredev/models/CourseModel.dart';
-import 'package:hiredev/services/profileServices.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hiredev/colors/colors.dart';
+import 'package:hiredev/components/ButtonCustom/ButtonCustom.dart';
+import 'package:hiredev/components/CustomInput/CustomInput.dart';
 import 'package:hiredev/provider/user_provider.dart';
+import 'package:hiredev/services/apiServices.dart';
+import 'package:hiredev/utils/secure_storage_service.dart';
 import 'package:provider/provider.dart';
 
 class CourseModal extends StatefulWidget {
+  final dynamic course;
+  final Function(dynamic)? onUpdate;
+  CourseModal({this.course, this.onUpdate});
   @override
   _CourseModalState createState() => _CourseModalState();
 }
 
 class _CourseModalState extends State<CourseModal> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _startDateController = TextEditingController();
-  final _endDateController = TextEditingController();
-  final _organizationController = TextEditingController();
-  final _certificateUrlController = TextEditingController();
-  List<CourseModel> _courses = [];
-  bool _isLoading = true;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _descriptionController = TextEditingController();
+  TextEditingController _organizationController = TextEditingController();
+  TextEditingController _certificateUrlController = TextEditingController();
+  bool isLoading = false;
+  bool isEditing = false;
+  bool _currentlyStudying = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCourses();
+    if (widget.course != null) {
+      isEditing = true;
+      _nameController.text = widget.course['name'] ?? '';
+      _descriptionController.text = widget.course['description'] ?? '';
+      _organizationController.text = widget.course['organization'] ?? '';
+      _certificateUrlController.text = widget.course['certificate_url'] ?? '';
+      _startDate =
+          widget.course['start_date'] != null
+              ? DateTime.parse(widget.course['start_date'])
+              : null;
+      _endDate =
+          widget.course['end_date'] != null
+              ? DateTime.parse(widget.course['end_date'])
+              : null;
+      _currentlyStudying = widget.course['currently_studying'] ?? false;
+    }
   }
 
-  Future<void> _loadCourses() async {
-    setState(() => _isLoading = true);
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = picked;
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> onSubmit() async {
     try {
-      final user = context.read<UserProvider>().user;
-      // final response = await ProfileServices.getCourses(user?.id ?? '');
-      // if (response['statusCode'] == 200) {
-      //   setState(() {
-      //     _courses =
-      //         (response['data'] as List)
-      //             .map((item) => CourseModel.fromJson(item))
-      //             .toList();
-      //   });
-      // }
-    } catch (e) {
-      print('Error loading courses: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+      setState(() {
+        isLoading = true;
+      });
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = userProvider.user;
 
-  Future<void> _saveCourse() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      try {
-        final user = context.read<UserProvider>().user;
-        final course = CourseModel(
-          name: _nameController.text,
-          description: _descriptionController.text,
-          startDate: _startDateController.text,
-          endDate: _endDateController.text,
-          organization: _organizationController.text,
-          certificateUrl: _certificateUrlController.text,
-          userId: user?.id,
+      if (_nameController.text.isEmpty ||
+          _organizationController.text.isEmpty ||
+          _startDate == null) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Vui lòng điền đầy đủ thông tin bắt buộc'),
+              ),
         );
-
-        // final response = await ProfileServices.createCourse(course.toJson());
-        // if (response['statusCode'] == 201) {
-        //   _loadCourses();
-        //   _clearForm();
-        //   ScaffoldMessenger.of(
-        //     context,
-        //   ).showSnackBar(SnackBar(content: Text('Course added successfully')));
-        // }
-      } catch (e) {
-        print('Error saving course: $e');
+        setState(() {
+          isLoading = false;
+        });
+        return;
       }
-    }
-  }
 
-  void _clearForm() {
-    _nameController.clear();
-    _descriptionController.clear();
-    _startDateController.clear();
-    _endDateController.clear();
-    _organizationController.clear();
-    _certificateUrlController.clear();
+      if (!_currentlyStudying && _endDate == null) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Vui lòng chọn ngày kết thúc'),
+              ),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Ngày kết thúc không thể trước ngày bắt đầu'),
+              ),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      final params = {
+        'name': _nameController.text,
+        'description': _descriptionController.text,
+        'organization': _organizationController.text,
+        'start_date': _startDate!.toIso8601String(),
+        'end_date': _currentlyStudying ? null : _endDate?.toIso8601String(),
+        'currently_studying': _currentlyStudying,
+        'certificate_url':
+            _certificateUrlController.text.isNotEmpty
+                ? _certificateUrlController.text
+                : null,
+        'user_id': user!.id,
+      };
+
+      if (isEditing) {
+        params['_id'] = widget.course['_id'];
+        await widget.onUpdate!(params);
+      } else {
+        final response = await ApiService().post(
+          dotenv.env['API_URL']! + "courses",
+          params,
+          token: await SecureStorageService().getRefreshToken(),
+        );
+        if (response['statusCode'] == 201) {
+          widget.onUpdate!(params);
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      print("Error submitting course: $e");
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Lỗi'),
+              content: Text(
+                'Đã xảy ra lỗi khi lưu thông tin khóa học: ${e.toString()}',
+              ),
+            ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Courses & Training'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => _buildCourseForm(),
-              );
-            },
-          ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: _courses.length,
-                itemBuilder: (context, index) {
-                  final course = _courses[index];
-                  return ListTile(
-                    title: Text(course.name ?? ''),
-                    subtitle: Text(
-                      '${course.organization} - ${course.startDate} to ${course.endDate}',
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            // Implement edit functionality
-                          },
+    return isLoading
+        ? Center(child: CircularProgressIndicator())
+        : Container(
+          color: Colors.white,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isEditing ? 'Chỉnh sửa khóa học' : 'Thêm khóa học',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            // Implement delete functionality
-                          },
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.3),
+                              spreadRadius: 1,
+                              blurRadius: 2,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                },
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.black87,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          padding: EdgeInsets.all(8),
+                          constraints: BoxConstraints(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: 'Tên khóa học',
+                    hint: 'Bắt buộc',
+                    controller: _nameController,
+                    type: InputType.input,
+                    required: true,
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: 'Tổ chức đào tạo',
+                    hint: 'Bắt buộc',
+                    controller: _organizationController,
+                    type: InputType.input,
+                    required: true,
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _selectDate(context, true),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Ngày bắt đầu',
+                              border: OutlineInputBorder(),
+                            ),
+                            child: Text(
+                              _startDate == null
+                                  ? 'mm / yyyy'
+                                  : '${_startDate!.month} / ${_startDate!.year}',
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: InkWell(
+                          onTap:
+                              _currentlyStudying
+                                  ? null
+                                  : () => _selectDate(context, false),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Ngày kết thúc',
+                              border: OutlineInputBorder(),
+                              enabled: !_currentlyStudying,
+                            ),
+                            child: Text(
+                              _currentlyStudying
+                                  ? 'Hiện tại'
+                                  : _endDate == null
+                                  ? 'mm / yyyy'
+                                  : '${_endDate!.month} / ${_endDate!.year}',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _currentlyStudying,
+                        onChanged: (value) {
+                          setState(() {
+                            _currentlyStudying = value ?? false;
+                          });
+                        },
+                      ),
+                      Text('Đang học'),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: "Mô tả",
+                    hint: "Mô tả về khóa học",
+                    controller: _descriptionController,
+                    type: InputType.textarea,
+                    required: true,
+                  ),
+                  SizedBox(height: 16),
+                  CustomInput(
+                    label: "Liên kết chứng chỉ",
+                    hint: "Liên kết đến chứng chỉ (không bắt buộc)",
+                    controller: _certificateUrlController,
+                    type: InputType.input,
+                    required: false,
+                  ),
+                  SizedBox(height: 24),
+                  ButtonCustom(
+                    text: isEditing ? "Cập nhật" : "Lưu",
+                    onPressed: () {
+                      onSubmit();
+                    },
+                    backgroundColor: AppColors.primaryColor,
+                    textColor: Colors.white,
+                  ),
+                ],
               ),
-    );
-  }
-
-  Widget _buildCourseForm() {
-    return AlertDialog(
-      title: Text('Add Course/Training'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Course Name'),
-                validator: (value) {
-                  if (value?.isEmpty ?? true) {
-                    return 'Please enter course name';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-              TextFormField(
-                controller: _startDateController,
-                decoration: InputDecoration(labelText: 'Start Date'),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                  );
-                  if (date != null) {
-                    _startDateController.text = date.toString().split(' ')[0];
-                  }
-                },
-              ),
-              TextFormField(
-                controller: _endDateController,
-                decoration: InputDecoration(labelText: 'End Date'),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                  );
-                  if (date != null) {
-                    _endDateController.text = date.toString().split(' ')[0];
-                  }
-                },
-              ),
-              TextFormField(
-                controller: _organizationController,
-                decoration: InputDecoration(labelText: 'Organization'),
-              ),
-              TextFormField(
-                controller: _certificateUrlController,
-                decoration: InputDecoration(labelText: 'Certificate URL'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _saveCourse();
-            Navigator.pop(context);
-          },
-          child: Text('Save'),
-        ),
-      ],
-    );
+        );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _startDateController.dispose();
-    _endDateController.dispose();
     _organizationController.dispose();
     _certificateUrlController.dispose();
     super.dispose();
