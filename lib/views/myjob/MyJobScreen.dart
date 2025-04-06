@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hiredev/views/myjob/AppliedJob.dart';
 import 'package:hiredev/views/myjob/SavedJob.dart';
+import 'package:hiredev/views/myjob/ViewedJob.dart';
 
 void main() {
   runApp(MyApp());
@@ -67,7 +68,7 @@ class MyJobScreen extends StatelessWidget {
           children: [
             AppliedJob(),
             SavedJob(),
-            Center(child: Text('Đã xem')),
+            ViewedJob(),
             Center(child: Text('Lời mời ứng tuyển')),
           ],
         ),

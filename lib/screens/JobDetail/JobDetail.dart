@@ -34,8 +34,10 @@ class JobDetailScreenState extends State<JobDetailScreen> {
   }
 
   Future<void> getJobDetail() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final UserModel? user = userProvider.user;
     final response = await ApiService().get(
-      dotenv.env['API_URL']! + "jobs/${widget.id}",
+      dotenv.env['API_URL']! + "jobs/${widget.id}/${user!.id}",
     );
     if (response['statusCode'] == 200) {
       print(response['data']);

@@ -74,6 +74,37 @@ class JobCard extends StatelessWidget {
                 appliedJob['job_id']['city_id']['name'] ?? '',
                 style: TextStyle(fontSize: 14),
               ),
+              SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    (appliedJob['job_id']['skill_name'] != null)
+                        ? appliedJob['job_id']['skill_name'].map<Widget>((
+                          skill,
+                        ) {
+                          return Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Color(0xFFD1D5DB)),
+                            ),
+                            child: Text(
+                              skill,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF4B5563),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          );
+                        }).toList()
+                        : [],
+              ),
               SizedBox(height: 6),
               isApplied
                   ? Text(
