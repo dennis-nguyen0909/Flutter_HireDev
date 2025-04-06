@@ -42,6 +42,37 @@ class Job {
     required this.salaryRangeMin,
     required this.createdAt,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'user_id': user.toJson(),
+      'title': title,
+      'city_id': city.toJson(),
+      'district_id': district.toJson(),
+      'job_contract_type': contractType.toJson(),
+      'job_type': jobType.toJson(),
+      'skill_name': skillNames,
+      'level': {'_id': level.id, 'name': level.name, 'key': level.key},
+      'expire_date': expireDate.toIso8601String(),
+      'type_money': {
+        '_id': moneyType.id,
+        'code': moneyType.code,
+        'symbol': moneyType.symbol,
+      },
+      'count_apply': countApply,
+      'is_negotiable': isNegotiable,
+      'skills':
+          skills.map((skill) => {'_id': skill.id, 'name': skill.name}).toList(),
+      'is_active': isActive,
+      'is_expired': isExpired,
+      'candidate_ids': candidateIds,
+      'salary_range_max': salaryRangeMax,
+      'salary_range_min': salaryRangeMin,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
   factory Job.fromJson(Map<String, dynamic> json) {
     try {
       return Job(
@@ -112,7 +143,6 @@ class Job {
       );
     } catch (e) {
       print("Error parsing Job: $e");
-      // Return a default Job object in case of error
       return Job(
         id: '',
         user: User(id: '', avatarCompany: '', companyName: ''),
@@ -137,6 +167,7 @@ class Job {
       );
     }
   }
+
   @override
   String toString() {
     return "Job(id: $id, title: $title, city: $city, district: $district, contractType: $contractType, jobType: $jobType, skillNames: $skillNames, level: $level, expireDate: $expireDate, moneyType: $moneyType, countApply: $countApply, isNegotiable: $isNegotiable, skills: $skills, isActive: $isActive, isExpired: $isExpired, candidateIds: $candidateIds, salaryRangeMax: $salaryRangeMax, salaryRangeMin: $salaryRangeMin, createdAt: $createdAt)";
@@ -154,6 +185,14 @@ class User {
     required this.companyName,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'avatar_company': avatarCompany,
+      'company_name': companyName,
+    };
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['_id'] ?? '',
@@ -169,6 +208,10 @@ class City {
 
   City({required this.id, required this.name});
 
+  Map<String, dynamic> toJson() {
+    return {'_id': id, 'name': name};
+  }
+
   factory City.fromJson(Map<String, dynamic> json) {
     return City(id: json['_id'] ?? '', name: json['name'] ?? '');
   }
@@ -179,6 +222,10 @@ class District {
   final String name;
 
   District({required this.id, required this.name});
+
+  Map<String, dynamic> toJson() {
+    return {'_id': id, 'name': name};
+  }
 
   factory District.fromJson(Map<String, dynamic> json) {
     return District(id: json['_id'] ?? '', name: json['name'] ?? '');
@@ -191,6 +238,10 @@ class ContractType {
   final String key;
 
   ContractType({required this.id, required this.name, required this.key});
+
+  Map<String, dynamic> toJson() {
+    return {'_id': id, 'name': name, 'key': key};
+  }
 
   factory ContractType.fromJson(Map<String, dynamic> json) {
     return ContractType(
@@ -207,6 +258,10 @@ class JobType {
   final String key;
 
   JobType({required this.id, required this.name, required this.key});
+
+  Map<String, dynamic> toJson() {
+    return {'_id': id, 'name': name, 'key': key};
+  }
 
   factory JobType.fromJson(Map<String, dynamic> json) {
     return JobType(

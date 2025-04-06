@@ -35,14 +35,17 @@ class _StateAppMainScreen extends State<AppMainScreen> {
     ];
 
     _navigationItems = const <BottomNavigationBarItem>[
-      BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.work_outline_rounded),
+        label: '',
+      ),
       BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
       BottomNavigationBarItem(
         icon: Icon(Icons.notifications_outlined),
         label: '',
       ),
-      BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: ''),
     ];
   }
 

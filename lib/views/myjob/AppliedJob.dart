@@ -16,35 +16,77 @@ class _AppliedJobState extends State<AppliedJob> {
   final SecureStorageService secureStorageService = SecureStorageService();
   List<dynamic> appliedJobs = [];
   bool isLoading = false;
+  bool isLoadingMore = false;
+  Map<String, dynamic> meta = {};
+  int currentPage = 1;
+  final int pageSize = 10;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    getRecentAppliedJob(1, 10, {});
+    getRecentAppliedJob(currentPage, pageSize, {});
+    _scrollController.addListener(_scrollListener);
   }
 
-  Future<void> getRecentAppliedJob(current, pageSize, queryParams) async {
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      if (!isLoadingMore && currentPage < (meta['totalPages'] ?? 0)) {
+        _loadMoreData();
+      }
+    }
+  }
+
+  Future<void> _loadMoreData() async {
+    if (isLoadingMore) return;
+
+    setState(() {
+      isLoadingMore = true;
+    });
+
+    await getRecentAppliedJob(currentPage + 1, pageSize, {}, loadMore: true);
+  }
+
+  Future<void> getRecentAppliedJob(
+    int current,
+    int pageSize,
+    Map<String, dynamic> queryParams, {
+    bool loadMore = false,
+  }) async {
     try {
-      setState(() {
-        isLoading = true;
-      });
+      if (!loadMore) {
+        setState(() {
+          isLoading = true;
+        });
+      }
+
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final UserModel? user = userProvider.user;
 
-      final query = {
-        'current': current,
-        'pageSize': pageSize,
-        'queryParams': queryParams,
-      };
       final response = await ApiService().get(
         dotenv.env['API_URL']! +
             'applications/recently-applied-candidate?current=$current&pageSize=$pageSize&query[user_id]=${user?.id}',
         token: await secureStorageService.getRefreshToken(),
       );
+
       print("duydeptrai ${response['data']['items']}");
       if (response['statusCode'] == 200) {
         setState(() {
-          appliedJobs = response['data']['items'];
+          if (loadMore) {
+            appliedJobs.addAll(response['data']['items']);
+          } else {
+            appliedJobs = response['data']['items'];
+          }
+          meta = response['data']['meta'];
+          currentPage = current;
         });
       }
     } catch (e) {
@@ -52,6 +94,7 @@ class _AppliedJobState extends State<AppliedJob> {
     } finally {
       setState(() {
         isLoading = false;
+        isLoadingMore = false;
       });
     }
   }
@@ -60,17 +103,28 @@ class _AppliedJobState extends State<AppliedJob> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        await getRecentAppliedJob(1, 10, {});
+        currentPage = 1;
+        await getRecentAppliedJob(1, pageSize, {});
       },
       child:
           isLoading
               ? Center(child: CircularProgressIndicator())
-              : appliedJobs.length == 0
+              : appliedJobs.isEmpty
               ? Center(child: Text('Không có dữ liệu'))
               : ListView.builder(
+                controller: _scrollController,
                 padding: EdgeInsets.all(10),
-                itemCount: appliedJobs.length,
+                itemCount: appliedJobs.length + (isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index == appliedJobs.length) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                  print("appliedJobs[index]: ${appliedJobs[index]['cv_id']}");
                   return JobCard(appliedJobs[index], true);
                 },
               ),

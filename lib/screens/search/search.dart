@@ -25,12 +25,21 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isLoading = false;
   Timer? _debounceTimer;
   dynamic selectedLocation;
+  List<String> _selectedTags = [];
+  List<String> _allTags = [
+    'Nodejs',
+    'Java',
+    'Api Testing',
+    'C#',
+    'Python',
+    'Automation Testing',
+  ];
+
   @override
   void initState() {
     super.initState();
     getJob(_currentPage, _pageSize, {});
 
-    // Add scroll listener for infinite scrolling
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
           _scrollController.position.maxScrollExtent) {
@@ -51,21 +60,27 @@ class _SearchScreenState extends State<SearchScreen> {
       cityIdParam = '&query[city_id]=${selectedLocation['id']}';
     }
 
+    String skillParam = '';
+    if (_selectedTags.isNotEmpty) {
+      skillParam = '&query[skill_name]=${_selectedTags.join(',')}';
+    }
+
     final queryParams =
-        'current=$current&pageSize=$pageSize&query[keyword]=${_searchController.text}$cityIdParam';
+        'current=$current&pageSize=$pageSize&query[keyword]=${_searchController.text}$cityIdParam$skillParam';
     final response = await ApiService().get(
       dotenv.env['API_URL']! + 'jobs?$queryParams',
       token: await secureStorageService.getRefreshToken(),
     );
-    print(dotenv.env['API_URL']! + 'jobs?$queryParams');
+
     if (response['statusCode'] == 200) {
       List<Job> items =
-          (response['data']['items'] as List).map((item) {
-            return Job.fromJson(item);
-          }).toList();
+          (response['data']['items'] as List)
+              .map((item) => Job.fromJson(item))
+              .toList();
       setState(() {
         _jobs = items;
         _meta = response['data']['meta'];
+        _isLoading = false;
       });
     }
   }
@@ -77,9 +92,23 @@ class _SearchScreenState extends State<SearchScreen> {
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       setState(() {
         _jobs.clear();
+        _currentPage = 1;
       });
       getJob(1, _pageSize, {});
     });
+  }
+
+  void _handleTagSelection(String tag, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedTags.add(tag);
+      } else {
+        _selectedTags.remove(tag);
+      }
+      _jobs.clear();
+      _currentPage = 1;
+    });
+    getJob(1, _pageSize, {});
   }
 
   @override
@@ -105,149 +134,159 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ),
-        title: TextField(
-          controller: _searchController,
-          onChanged: _onSearchChanged, // Handle search input changes
-          decoration: InputDecoration(
-            hintText: 'Tìm kiếm...',
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: Colors.grey, width: 1),
+        title: Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.0),
+          child: TextField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+            decoration: InputDecoration(
+              hintText: 'Tìm kiếm công việc...',
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+              filled: true,
+              fillColor: Colors.white,
+              prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18.0),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18.0),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18.0),
+                borderSide: BorderSide(color: Colors.white, width: 1),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 12.0,
+                horizontal: 16.0,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(Icons.close, color: Colors.grey[600]),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() {
+                    _jobs.clear();
+                    _currentPage = 1;
+                  });
+                  getJob(1, _pageSize, {});
+                },
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: Colors.grey, width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: Colors.blue, width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              vertical: 8.0,
-              horizontal: 8.0,
-            ),
-            suffixIcon: IconButton(
-              icon: Icon(Icons.close),
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  _jobs.clear();
-                });
-                getJob(1, _pageSize, {});
-              },
-            ),
+            style: TextStyle(color: Colors.black, fontSize: 14.0),
           ),
-          style: TextStyle(color: Colors.black, fontSize: 14.0),
         ),
       ),
       body: Column(
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                Chip(label: Text('Java')),
-                SizedBox(width: 8.0),
-                Chip(label: Text('Api Testing')),
-                SizedBox(width: 8.0),
-                Chip(label: Text('Golang')),
-                SizedBox(width: 8.0),
-              ],
-            ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-            child: Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LocationScreen()),
-                    );
-                    setState(() {
-                      selectedLocation = result;
-                      // Call getJob again when location is selected
-                      if (selectedLocation != null) {
-                        _jobs.clear();
-                        _currentPage = 1;
-                        getJob(_currentPage, _pageSize, {});
-                      }
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      side: BorderSide(color: Colors.grey),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 10.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text('Địa điểm', style: TextStyle(color: Colors.black)),
-                      SizedBox(width: 4.0),
-                      Icon(Icons.location_on, size: 16.0),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 12.0),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 10.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text('Ngành nghề', style: TextStyle(color: Colors.black)),
-                      SizedBox(width: 4.0),
-                      Icon(Icons.work, size: 16.0),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 12.0),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 10.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Lĩnh vực công ty',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      SizedBox(width: 4.0),
-                      Icon(Icons.business, size: 16.0),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // SingleChildScrollView(
+          //   scrollDirection: Axis.horizontal,
+          //   child: Row(
+          //     children:
+          //         _allTags.map((tag) {
+          //           return Padding(
+          //             padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          //             child: FilterChip(
+          //               label: Text(tag),
+          //               selected: _selectedTags.contains(tag),
+          //               onSelected:
+          //                   (bool selected) =>
+          //                       _handleTagSelection(tag, selected),
+          //             ),
+          //           );
+          //         }).toList(),
+          //   ),
+          // ),
+          // SingleChildScrollView(
+          //   scrollDirection: Axis.horizontal,
+          //   padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          //   child: Row(
+          //     children: [
+          //       ElevatedButton(
+          //         onPressed: () async {
+          //           final result = await Navigator.push(
+          //             context,
+          //             MaterialPageRoute(builder: (context) => LocationScreen()),
+          //           );
+          //           setState(() {
+          //             selectedLocation = result;
+          //             if (selectedLocation != null) {
+          //               _jobs.clear();
+          //               _currentPage = 1;
+          //               getJob(_currentPage, _pageSize, {});
+          //             }
+          //           });
+          //         },
+          //         style: ElevatedButton.styleFrom(
+          //           backgroundColor: Colors.white,
+          //           foregroundColor: Colors.white,
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius: BorderRadius.circular(8.0),
+          //             side: BorderSide(color: Colors.grey),
+          //           ),
+          //           padding: EdgeInsets.symmetric(
+          //             horizontal: 16.0,
+          //             vertical: 10.0,
+          //           ),
+          //         ),
+          //         child: Row(
+          //           children: [
+          //             Text('Địa điểm', style: TextStyle(color: Colors.black)),
+          //             SizedBox(width: 4.0),
+          //             Icon(Icons.location_on, size: 16.0),
+          //           ],
+          //         ),
+          //       ),
+          //       SizedBox(width: 12.0),
+          //       ElevatedButton(
+          //         onPressed: () {},
+          //         style: ElevatedButton.styleFrom(
+          //           backgroundColor: Colors.white,
+          //           foregroundColor: Colors.white,
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius: BorderRadius.circular(8.0),
+          //           ),
+          //           padding: EdgeInsets.symmetric(
+          //             horizontal: 16.0,
+          //             vertical: 10.0,
+          //           ),
+          //         ),
+          //         child: Row(
+          //           children: [
+          //             Text('Ngành nghề', style: TextStyle(color: Colors.black)),
+          //             SizedBox(width: 4.0),
+          //             Icon(Icons.work, size: 16.0),
+          //           ],
+          //         ),
+          //       ),
+          //       SizedBox(width: 12.0),
+          //       ElevatedButton(
+          //         onPressed: () {},
+          //         style: ElevatedButton.styleFrom(
+          //           backgroundColor: Colors.white,
+          //           foregroundColor: Colors.white,
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius: BorderRadius.circular(8.0),
+          //           ),
+          //           padding: EdgeInsets.symmetric(
+          //             horizontal: 16.0,
+          //             vertical: 10.0,
+          //           ),
+          //         ),
+          //         child: Row(
+          //           children: [
+          //             Text(
+          //               'Lĩnh vực công ty',
+          //               style: TextStyle(color: Colors.black),
+          //             ),
+          //             SizedBox(width: 4.0),
+          //             Icon(Icons.business, size: 16.0),
+          //           ],
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -256,7 +295,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 if (index == _jobs.length) {
                   return Center(child: CircularProgressIndicator());
                 }
-                return JobCard(job: _jobs[index], isDisplayHeart: false);
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 4.0,
+                  ),
+                  child: JobCard(
+                    job: _jobs[index],
+                    isDisplayHeart: false,
+                    isBorder: true,
+                    isFavorite: false,
+                  ),
+                );
               },
             ),
           ),

@@ -140,12 +140,29 @@ class CompanyCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Image.network(
-              company['avatar_company'] ?? 'https://via.placeholder.com/60',
-              height: 60, // Điều chỉnh chiều cao logo theo ý muốn
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.business, size: 60);
-              },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4.0),
+              child: Image.network(
+                company['avatar_company'] ?? 'https://via.placeholder.com/60',
+                height: 60,
+                width: 60,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 60,
+                    width: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: Icon(
+                      Icons.business,
+                      size: 40,
+                      color: Colors.grey[600],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           Text(

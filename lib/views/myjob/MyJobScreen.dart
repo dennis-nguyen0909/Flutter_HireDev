@@ -47,19 +47,18 @@ class MyJobScreen extends StatelessWidget {
             preferredSize: Size.fromHeight(48.0),
             child: Container(
               color: Colors.white,
-              child: SingleChildScrollView(
-                child: TabBar(
-                  labelColor: Colors.blue,
-                  unselectedLabelColor: Colors.black,
-                  indicatorColor: Colors.blue,
-                  isScrollable: true,
-                  tabs: [
-                    Tab(text: 'Đã ứng tuyển'),
-                    Tab(text: 'Đã lưu'),
-                    Tab(text: 'Đã xem'),
-                    Tab(text: 'Lời mời ứng tuyển'),
-                  ],
-                ),
+              child: TabBar(
+                labelColor: Colors.blue,
+                unselectedLabelColor: Colors.black,
+                indicatorColor: Colors.blue,
+                isScrollable: false,
+                labelPadding: EdgeInsets.symmetric(horizontal: 8.0),
+                tabs: [
+                  Tab(text: 'Đã ứng tuyển'),
+                  Tab(text: 'Đã lưu'),
+                  Tab(text: 'Đã xem'),
+                  Tab(text: 'Lời mời'),
+                ],
               ),
             ),
           ),

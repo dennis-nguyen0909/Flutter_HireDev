@@ -154,6 +154,7 @@ class JobCard extends StatelessWidget {
                 leading: Icon(Icons.person),
                 title: Text('Xem hồ sơ ứng tuyển'),
                 onTap: () {
+                  print("appliedJob: ${appliedJob['cv_id']}");
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -184,15 +185,28 @@ class JobCard extends StatelessWidget {
                                 },
                               ),
                             ),
-                            body: PDF().fromUrl(
-                              appliedJob['cv_id']['cv_link'],
-                              placeholder:
-                                  (progress) =>
-                                      Center(child: Text('$progress %')),
-                              errorWidget:
-                                  (error) =>
-                                      Center(child: Text(error.toString())),
-                            ),
+                            body:
+                                appliedJob['cv_id'] == null
+                                    ? Center(
+                                      child: Text(
+                                        'CV không tồn tại hoặc đã bị xóa',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    )
+                                    : PDF().fromUrl(
+                                      appliedJob['cv_id']['cv_link'],
+                                      placeholder:
+                                          (progress) => Center(
+                                            child: Text('$progress %'),
+                                          ),
+                                      errorWidget:
+                                          (error) => Center(
+                                            child: Text(error.toString()),
+                                          ),
+                                    ),
                           ),
                     ),
                   );

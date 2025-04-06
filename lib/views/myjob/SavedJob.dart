@@ -15,35 +15,77 @@ class SavedJob extends StatefulWidget {
 class _SavedJobState extends State<SavedJob> {
   final SecureStorageService secureStorageService = SecureStorageService();
   List<dynamic> savedJobs = [];
+  Map<String, dynamic> meta = {};
   bool isLoading = false;
+  bool isLoadingMore = false;
+  int currentPage = 1;
+  final int pageSize = 10;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    getRecentSavedJob(1, 10, {});
+    getRecentSavedJob(currentPage, pageSize, {});
+    _scrollController.addListener(_scrollListener);
   }
 
-  Future<void> getRecentSavedJob(current, pageSize, queryParams) async {
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      if (!isLoadingMore && currentPage < (meta['totalPages'] ?? 0)) {
+        _loadMoreData();
+      }
+    }
+  }
+
+  Future<void> _loadMoreData() async {
+    if (isLoadingMore) return;
+
+    setState(() {
+      isLoadingMore = true;
+    });
+
+    await getRecentSavedJob(currentPage + 1, pageSize, {}, loadMore: true);
+  }
+
+  Future<void> getRecentSavedJob(
+    int current,
+    int pageSize,
+    Map<String, dynamic> queryParams, {
+    bool loadMore = false,
+  }) async {
     try {
-      setState(() {
-        isLoading = true;
-      });
+      if (!loadMore) {
+        setState(() {
+          isLoading = true;
+        });
+      }
+
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final UserModel? user = userProvider.user;
 
-      final query = {
-        'current': current,
-        'pageSize': pageSize,
-        'queryParams': queryParams,
-      };
       final response = await ApiService().get(
         dotenv.env['API_URL']! +
             'favorite-jobs?current=$current&pageSize=$pageSize&query[user_id]=${user?.id}',
         token: await secureStorageService.getRefreshToken(),
       );
+
       if (response['statusCode'] == 200) {
         setState(() {
-          savedJobs = response['data']['items'];
+          if (loadMore) {
+            savedJobs.addAll(response['data']['items']);
+          } else {
+            savedJobs = response['data']['items'];
+          }
+          meta = response['data']['meta'];
+          currentPage = current;
         });
       }
     } catch (e) {
@@ -51,6 +93,7 @@ class _SavedJobState extends State<SavedJob> {
     } finally {
       setState(() {
         isLoading = false;
+        isLoadingMore = false;
       });
     }
   }
@@ -59,17 +102,27 @@ class _SavedJobState extends State<SavedJob> {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        await getRecentSavedJob(1, 10, {});
+        currentPage = 1;
+        await getRecentSavedJob(1, pageSize, {});
       },
       child:
           isLoading
               ? Center(child: CircularProgressIndicator())
-              : savedJobs.length == 0
+              : savedJobs.isEmpty
               ? Center(child: Text('Không có dữ liệu'))
               : ListView.builder(
+                controller: _scrollController,
                 padding: EdgeInsets.all(10),
-                itemCount: savedJobs.length,
+                itemCount: savedJobs.length + (isLoadingMore ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index == savedJobs.length) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
                   return JobCard(
                     job: savedJobs[index]!['job_id'],
                     isFavorite: true,
