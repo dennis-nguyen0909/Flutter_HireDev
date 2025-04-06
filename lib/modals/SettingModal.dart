@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hiredev/modals/ChangePasswordModal.dart';
 import 'package:hiredev/modals/SettingNotification.dart';
+import 'package:hiredev/modals/SocialMediaModal.dart';
 
 class SettingModal extends StatelessWidget {
   @override
@@ -58,6 +59,7 @@ class SettingModal extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  Text("Tài khoản"),
                   ListTile(
                     leading: Icon(Icons.lock_outline),
                     title: Text('Đổi Mật Khẩu'),
@@ -72,16 +74,7 @@ class SettingModal extends StatelessWidget {
                           duration: Duration(milliseconds: 300),
                         ),
                         builder: (BuildContext context) {
-                          return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: Offset(1.0, 0.0),
-                              end: Offset.zero,
-                            ).animate(
-                              CurvedAnimation(
-                                parent: ModalRoute.of(context)!.animation!,
-                                curve: Curves.easeInOut,
-                              ),
-                            ),
+                          return Container(
                             child: Container(
                               width: MediaQuery.of(context).size.width,
                               child: ChangePasswordModal(),
@@ -92,24 +85,75 @@ class SettingModal extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: Icon(Icons.visibility_off_outlined),
-                    title: Text('Ẩn hồ sơ với Nhà tuyển dụng'),
+                    leading: Icon(Icons.lock_outline),
+                    title: Text('Liên kết xã hội'),
                     trailing: Icon(Icons.chevron_right),
                     onTap: () {
-                      // Xử lý sự kiện khi người dùng chọn Ẩn hồ sơ với Nhà tuyển dụng
-                      Navigator.pop(context); // Đóng modal bottom sheet
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (BuildContext context) {
+                          return Container(
+                            // width: MediaQuery.of(context).size.width,
+                            child: SocialMediaModal(),
+                          );
+                        },
+                      );
                     },
                   ),
                   ListTile(
-                    leading: Icon(Icons.refresh_outlined),
-                    title: Text('Làm Mới Hồ Sơ'),
+                    leading: Icon(Icons.more_horiz),
+                    title: Text('Khác'),
                     trailing: Icon(Icons.chevron_right),
                     onTap: () {
-                      // Xử lý sự kiện khi người dùng chọn Làm Mới Hồ Sơ
-                      Navigator.pop(context); // Đóng modal bottom sheet
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(15),
+                          ),
+                        ),
+                        builder: (BuildContext context) {
+                          return Container(
+                            padding: EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  title: Text(
+                                    'Xóa tài khoản',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                  onTap: () {
+                                    // Xử lý xóa tài khoản
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                Divider(),
+                                ListTile(
+                                  leading: Icon(Icons.close),
+                                  title: Text('Đóng'),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
                   Divider(),
+
+                  Text("Thông báo"),
                   ListTile(
                     leading: Icon(Icons.notifications_active_outlined),
                     title: Text('Cài Đặt Thông Báo'),
@@ -122,15 +166,6 @@ class SettingModal extends StatelessWidget {
                           return SettingNotificationModal();
                         },
                       );
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.work_outline),
-                    title: Text('Cài Đặt Thông Báo Việc Làm'),
-                    trailing: Icon(Icons.chevron_right),
-                    onTap: () {
-                      // Xử lý sự kiện khi người dùng chọn Cài Đặt Thông Báo Việc Làm
-                      Navigator.pop(context); // Đóng modal bottom sheet
                     },
                   ),
                 ],
