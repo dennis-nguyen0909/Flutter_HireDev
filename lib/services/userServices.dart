@@ -28,4 +28,13 @@ class UserServices {
     }
     return response;
   }
+
+  static Future<dynamic> changePassword(Map<String, dynamic> data) async {
+    final response = await ApiService().post(
+      dotenv.get('API_URL') + 'users/reset-password',
+      data,
+      token: await SecureStorageService().getRefreshToken(),
+    );
+    return response;
+  }
 }
