@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hiredev/modals/ChangePasswordModal.dart';
+import 'package:hiredev/modals/SettingNotification.dart';
 
 class SettingModal extends StatelessWidget {
   @override
@@ -91,15 +92,6 @@ class SettingModal extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: Icon(Icons.email_outlined),
-                    title: Text('Đổi Email Truy Cập'),
-                    trailing: Icon(Icons.chevron_right),
-                    onTap: () {
-                      // Xử lý sự kiện khi người dùng chọn Đổi Email Truy Cập
-                      Navigator.pop(context); // Đóng modal bottom sheet
-                    },
-                  ),
-                  ListTile(
                     leading: Icon(Icons.visibility_off_outlined),
                     title: Text('Ẩn hồ sơ với Nhà tuyển dụng'),
                     trailing: Icon(Icons.chevron_right),
@@ -123,8 +115,13 @@ class SettingModal extends StatelessWidget {
                     title: Text('Cài Đặt Thông Báo'),
                     trailing: Icon(Icons.chevron_right),
                     onTap: () {
-                      // Xử lý sự kiện khi người dùng chọn Cài Đặt Thông Báo
-                      Navigator.pop(context); // Đóng modal bottom sheet
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (BuildContext context) {
+                          return SettingNotificationModal();
+                        },
+                      );
                     },
                   ),
                   ListTile(
