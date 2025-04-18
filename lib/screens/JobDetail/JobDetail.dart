@@ -33,6 +33,16 @@ class JobDetailScreenState extends State<JobDetailScreen> {
     getDetailFavorite();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("duydeptrai123123");
+    // Gọi lại getJobDetail và getDetailFavorite khi có sự thay đổi dependencies,
+    // ví dụ như khi quay lại màn hình này.
+    getJobDetail();
+    getDetailFavorite();
+  }
+
   Future<void> getJobDetail() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final UserModel? user = userProvider.user;
@@ -855,7 +865,16 @@ class JobDetailScreenState extends State<JobDetailScreen> {
                                           salaryRangeMin: job!.salaryRangeMin,
                                         ),
                                   ),
-                                );
+                                ).then((value) {
+                                  // This callback will be executed when ApplyJobScreen is popped.
+                                  // 'value' will contain the data passed back from ApplyJobScreen (if any).
+                                  if (value == true) {
+                                    // If ApplyJobScreen popped with a 'true' value (meaning application was successful),
+                                    // then call getJobDetail to refresh the JobDetailScreen.
+                                    getJobDetail();
+                                    getDetailFavorite();
+                                  }
+                                });
                               },
                               child: Text(
                                 job!.candidateIds.contains(user!.id)

@@ -104,7 +104,9 @@ class _ApplyJobState extends State<ApplyJob> {
   List<ResumeItem> resumes = [];
   SecureStorageService secureStorageService = SecureStorageService();
   int currentPage = 1;
-  String? selectedResumeId; // Store the ID of the selected resume
+  ResumeItem? selectedResume; // Store the selected ResumeItem
+  bool _isApplying =
+      false; // Thêm biến trạng thái để tránh gọi applyJob nhiều lần
 
   @override
   void initState() {
@@ -114,39 +116,25 @@ class _ApplyJobState extends State<ApplyJob> {
 
   void onResumeSelected(String id) {
     setState(() {
-      if (selectedResumeId == id) {
-        selectedResumeId = null; // Deselect if already selected
+      if (selectedResume?.id == id) {
+        selectedResume = null; // Deselect if already selected
       } else {
-        selectedResumeId = id; // Select the new ID
+        selectedResume = resumes.firstWhere(
+          (resume) => resume.id == id,
+        ); // Select the new ResumeItem
       }
     });
   }
 
   Future<void> applyJob() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final UserModel? user = userProvider.user;
-    if (selectedResumeId != null) {
-      print('Ứng tuyển với resume ID: $selectedResumeId');
-      final params = {
-        'job_id': widget.jobId,
-        'cv_id': selectedResumeId,
-        'cover_letter': '',
-        'employer_id': widget.employerId,
-        'user_id': user?.id,
-      };
-      print("params: $params");
-      final response = await ApiService().post(
-        dotenv.env['API_URL']! + 'applications',
-        params,
-        token: await secureStorageService.getRefreshToken(),
-      );
-      if (response['statusCode'] == 201) {
+    if (_isApplying || selectedResume == null) {
+      if (selectedResume == null) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return CustomAlertDialog(
               title: 'Thông báo',
-              content: 'Ứng tuyển thành công.',
+              content: 'Vui lòng chọn một CV để ứng tuyển.',
               buttonText: 'OK',
               onPressed: () {
                 Navigator.of(context).pop();
@@ -155,10 +143,59 @@ class _ApplyJobState extends State<ApplyJob> {
             );
           },
         );
-        Navigator.pop(context);
+      }
+      return;
+    }
+
+    setState(() {
+      _isApplying = true;
+    });
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final UserModel? user = userProvider.user;
+    try {
+      print(
+        'Ứng tuyển với resume ID: ${selectedResume!.id}, name: ${selectedResume!.cvName}, link: ${selectedResume!.cvLink}',
+      );
+      final params = {
+        'job_id': widget.jobId,
+        'cv_id': selectedResume!.id,
+        'cover_letter': '',
+        'employer_id': widget.employerId,
+        'user_id': user?.id,
+        'cv_name': selectedResume!.cvName,
+        'cv_link': selectedResume!.cvLink,
+      };
+      print("params: $params");
+      final response = await ApiService().post(
+        dotenv.env['API_URL']! + 'applications',
+        params,
+        token: await secureStorageService.getRefreshToken(),
+      );
+      print(response['statusCode'] == 201);
+      if (response['statusCode'] == 201) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Thông báo'),
+              content: Text('Ứng tuyển thành công.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+
+                    Navigator.pop(context, true);
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
         return;
       }
-      if (response['response']['statusCode'] == 400) {
+      if (response['response']?['statusCode'] == 400) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -175,14 +212,15 @@ class _ApplyJobState extends State<ApplyJob> {
         );
         return;
       }
-      print('responseduy: ${response['response']['statusCode']}');
-    } else {
+      print('responseduy: ${response['response']?['statusCode']}');
+    } catch (e) {
+      print("Lỗi khi ứng tuyển: $e");
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return CustomAlertDialog(
-            title: 'Thông báo',
-            content: 'Vui lòng chọn một CV để ứng tuyển.',
+            title: 'Lỗi',
+            content: 'Đã xảy ra lỗi khi ứng tuyển. Vui lòng thử lại sau.',
             buttonText: 'OK',
             onPressed: () {
               Navigator.of(context).pop();
@@ -191,6 +229,10 @@ class _ApplyJobState extends State<ApplyJob> {
           );
         },
       );
+    } finally {
+      setState(() {
+        _isApplying = false;
+      });
     }
   }
 
@@ -294,7 +336,7 @@ class _ApplyJobState extends State<ApplyJob> {
                       itemCount: resumes.length,
                       itemBuilder: (context, index) {
                         final resume = resumes[index];
-                        final isSelected = selectedResumeId == resume.id;
+                        final isSelected = selectedResume?.id == resume.id;
                         return Card(
                           color: Colors.white,
                           elevation: 3,
@@ -322,14 +364,6 @@ class _ApplyJobState extends State<ApplyJob> {
             right: 0,
             child: Container(
               width: double.infinity,
-
-              // decoration: BoxDecoration(
-              //   gradient: LinearGradient(
-              //     colors: [Color(0xFFDA4156), Colors.black],
-              //     begin: Alignment.topLeft,
-              //     end: Alignment.bottomCenter,
-              //   ),
-              // ),
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -338,12 +372,18 @@ class _ApplyJobState extends State<ApplyJob> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-
                 onPressed: applyJob,
-                child: Text(
-                  'Ứng tuyển',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+                child:
+                    _isApplying
+                        ? CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        )
+                        : Text(
+                          'Ứng tuyển',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
               ),
             ),
           ),
