@@ -66,20 +66,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (imageFile != null) {
       // Xử lý ảnh đã chọn
       print('Ảnh đã chọn từ thư viện: ${imageFile.path}');
-      final uploadFile = await FileService.uploadFile(imageFile.path);
-      final jsonResponse = jsonDecode(uploadFile ?? '');
-      if (jsonResponse['statusCode'] == 201) {
-        setState(() {
-          _selectedImagePath = imageFile.path;
-        });
-        print('uploadFile: $jsonResponse');
-        final updateUser = await UserServices.updateUser({
-          "id": user?.id,
-          "avatar": jsonResponse['data']['url'],
-        }, context: context);
-        print('updateUser: $updateUser');
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final UserModel? user = userProvider.user;
+      final String? userId = user?.id?.toString(); // Lấy userId
+
+      if (userId != null) {
+        final uploadFileResponse = await FileService.uploadFile(
+          imageFile.path,
+          userId,
+        );
+        print("uploadfiel $uploadFileResponse");
+        final jsonResponse = jsonDecode(uploadFileResponse ?? '');
+        if (jsonResponse['statusCode'] == 201) {
+          setState(() {
+            _selectedImagePath = imageFile.path;
+          });
+          print('uploadFile: $jsonResponse');
+          final updateUser = await UserServices.updateUser({
+            "id": user?.id,
+            "avatar": jsonResponse['data']['url'],
+          }, context: context);
+          print('updateUser: $updateUser');
+        } else {
+          print('uploadFile: $jsonResponse');
+          // Xử lý lỗi upload ảnh
+        }
       } else {
-        print('uploadFile: $jsonResponse');
+        print('Không có ID người dùng để tải lên ảnh.');
+        // Xử lý trường hợp không có userId
       }
     } else {
       print('Không có ảnh nào được chọn từ thư viện.');

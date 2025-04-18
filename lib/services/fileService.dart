@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart'; // Import http_parser
 
 class FileService {
-  static Future<String?> uploadFilePdf(String filePath) async {
+  static Future<String?> uploadFilePdf(String filePath, String userId) async {
     SecureStorageService secureStorageService = SecureStorageService();
     try {
       final url = Uri.parse(dotenv.get('API_URL') + 'media/upload-pdf');
@@ -18,6 +18,9 @@ class FileService {
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
+
+      // Add userId as a field
+      request.fields['userId'] = userId;
 
       // Get file information
       final file = File(filePath);
@@ -42,6 +45,9 @@ class FileService {
       if (response.statusCode == 201) {
         return response.body;
       } else {
+        print(
+          'Failed to upload PDF. Status code: ${response.statusCode}, Body: ${response.body}',
+        );
         return null; // Or handle the error appropriately
       }
     } catch (e) {
@@ -84,7 +90,7 @@ class FileService {
     return response;
   }
 
-  static Future<String?> uploadFile(String filePath) async {
+  static Future<String?> uploadFile(String filePath, String userId) async {
     SecureStorageService secureStorageService = SecureStorageService();
     try {
       print('filePath: $filePath');
@@ -100,7 +106,7 @@ class FileService {
       // Get file information
       final file = File(filePath);
       final fileName = file.path.split('/').last;
-
+      request.fields['userId'] = userId;
       // Add file to request
       request.files.add(
         await http.MultipartFile.fromPath(

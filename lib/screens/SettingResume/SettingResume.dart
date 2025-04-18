@@ -84,19 +84,33 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
   }
 
   Future<void> uploadFile(String filePath) async {
-    // Implement file upload logic here
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final UserModel? user = userProvider.user;
+    String? userIdString;
+
+    if (user?.id != null) {
+      userIdString = user!.id!.toString();
+    } else {
+      // Handle the case where user or user.id is null
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không tìm thấy thông tin người dùng để tải lên.'),
+        ),
+      );
+      return; // Exit the function if user info is missing
+    }
+
     try {
       setState(() {
         _loadingUpload = true;
       });
-      final response = await FileService.uploadFilePdf(filePath);
+      final response = await FileService.uploadFilePdf(filePath, userIdString!);
+      print("response $response");
       if (response != null) {
         final parsedResponse = json.decode(response);
         if (parsedResponse['statusCode'] == 201 &&
             parsedResponse['data'] != null) {
-          final url = parsedResponse['data']['url'];
+          final url = parsedResponse['data']['result']['url'];
           final cvName = filePath.split('/').last;
           final resultBytes = parsedResponse['data']['result']['bytes'];
           final publicId = parsedResponse['data']['result']['public_id'];
@@ -105,7 +119,8 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
             resultBytes,
             cvName,
             publicId,
-            user?.id ?? '',
+            user?.id ??
+                '', // Fallback to empty string if user?.id is null for updateCvOfUser
           );
           print("responseData $responseData");
           if (responseData['statusCode'] == 201) {
@@ -117,12 +132,25 @@ class _ResumeSettingsScreenState extends State<ResumeSettingsScreen> {
           }
         } else {
           print("Upload response error: $parsedResponse");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi tải lên: Phản hồi không hợp lệ.')),
+          );
         }
       } else {
         print("Upload failed: No response received");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Tải lên thất bại: Không nhận được phản hồi từ máy chủ.',
+            ),
+          ),
+        );
       }
     } catch (e) {
       print("Upload error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã xảy ra lỗi trong quá trình tải lên: $e')),
+      );
     } finally {
       setState(() {
         _loadingUpload = false;
