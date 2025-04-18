@@ -136,15 +136,23 @@ class _JobApplicationStatusScreenState
                               )
                               : Text(
                                 Currency.formatCurrencyWithSymbol(
-                                      widget.appliedJob['job_id']?['salary_range_min'] ??
-                                          '',
+                                      int.tryParse(
+                                            widget.appliedJob['job_id']?['salary_range_min']
+                                                    ?.toString() ??
+                                                '',
+                                          ) ??
+                                          0,
                                       widget.appliedJob['job_id']?['type_money']?['symbol'] ??
                                           '',
                                     ) +
                                     " - " +
                                     Currency.formatCurrencyWithSymbol(
-                                      widget.appliedJob['job_id']?['salary_range_max'] ??
-                                          '',
+                                      int.tryParse(
+                                            widget.appliedJob['job_id']?['salary_range_max']
+                                                    ?.toString() ??
+                                                '',
+                                          ) ??
+                                          0,
                                       widget.appliedJob['job_id']?['type_money']?['symbol'] ??
                                           '',
                                     ),

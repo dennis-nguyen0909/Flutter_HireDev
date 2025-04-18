@@ -32,19 +32,20 @@ class _ScreenListCompanyState extends State<ScreenListCompany> {
   }
 
   void _onSearchChanged() {
-    print("companyName: $companyName");
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      setState(() {
-        companyName = _searchController.text;
-      });
-      if (idRoleEmployer.isNotEmpty) {
-        getCompanies(idRoleEmployer);
+      if (_searchController.text != companyName) {
+        setState(() {
+          companyName = _searchController.text;
+        });
+        if (idRoleEmployer.isNotEmpty) {
+          getCompanies(idRoleEmployer, companyName);
+        }
       }
     });
   }
 
-  Future<void> getCompanies(String idRoleEmployer) async {
+  Future<void> getCompanies(String idRoleEmployer, String? searchName) async {
     if (idRoleEmployer.isEmpty) return;
 
     setState(() {
@@ -53,12 +54,12 @@ class _ScreenListCompanyState extends State<ScreenListCompany> {
 
     try {
       final response = await CompanyServices.getCompanies(
-        companyName,
+        searchName ?? '',
         idRoleEmployer,
         1,
         10,
       );
-      print("EMPLOYER: $response");
+      print("EMPLOYER SEARCH '$searchName': $response");
 
       if (response['statusCode'] == 200) {
         setState(() {
@@ -88,7 +89,7 @@ class _ScreenListCompanyState extends State<ScreenListCompany> {
 
         // Only call getCompanies if we have a valid idRoleEmployer
         if (idRoleEmployer.isNotEmpty) {
-          await getCompanies(idRoleEmployer);
+          await getCompanies(idRoleEmployer, ''); // Load initial companies
         }
       }
       print("idRoleEmployer: $idRoleEmployer");
@@ -132,83 +133,71 @@ class _ScreenListCompanyState extends State<ScreenListCompany> {
           },
         ),
       ),
-      body:
-          isLoading
-              ? Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Khám Phá Văn Hoá Công Ty',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Nhập tên công ty',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide(width: 1),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 8),
-                          isDense: true,
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                      Text(
-                        'Công Ty Nổi Bật',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children:
-                              companies.isEmpty
-                                  ? [
-                                    Center(child: Text('Không có công ty nào')),
-                                  ]
-                                  : companies.map((company) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 16.0,
-                                      ),
-                                      child: CompanyCard(
-                                        idCompany: company['_id'],
-                                        imageUrl:
-                                            company['avatar_company'] ??
-                                            'https://via.placeholder.com/80',
-                                        companyName:
-                                            company['company_name'] ??
-                                            'Unknown',
-                                        details:
-                                            company['industry'] ??
-                                            'Không có thông tin',
-                                        followers:
-                                            '${company['followers_count'] ?? 0} lượt theo dõi',
-                                        jobs:
-                                            '${company['jobs_count'] ?? 0} việc làm',
-                                      ),
-                                    );
-                                  }).toList(),
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                    ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Khám Phá Văn Hoá Công Ty',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Nhập tên công ty',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide(width: 1),
                   ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  isDense: true,
                 ),
               ),
+              SizedBox(height: 24),
+              Text(
+                'Công Ty Nổi Bật',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 16),
+              isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children:
+                          companies.isEmpty
+                              ? [Center(child: Text('Không có công ty nào'))]
+                              : companies.map((company) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 16.0),
+                                  child: CompanyCard(
+                                    idCompany: company['_id'],
+                                    imageUrl:
+                                        company['avatar_company'] ??
+                                        'https://via.placeholder.com/80',
+                                    companyName:
+                                        company['company_name'] ?? 'Unknown',
+                                    details:
+                                        company['industry'] ??
+                                        'Không có thông tin',
+                                    followers:
+                                        '${company['followers_count'] ?? 0} lượt theo dõi',
+                                    jobs:
+                                        '${company['jobs_count'] ?? 0} việc làm',
+                                  ),
+                                );
+                              }).toList(),
+                    ),
+                  ),
+              SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

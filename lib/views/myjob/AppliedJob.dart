@@ -124,7 +124,7 @@ class _AppliedJobState extends State<AppliedJob> {
                       ),
                     );
                   }
-                  print("appliedJobs[index]: ${appliedJobs[index]['cv_id']}");
+
                   return JobCard(appliedJobs[index], true);
                 },
               ),

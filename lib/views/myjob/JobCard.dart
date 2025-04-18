@@ -60,12 +60,22 @@ class JobCard extends StatelessWidget {
                   ? Text('Thỏa thuận', style: TextStyle(fontSize: 14))
                   : Text(
                     Currency.formatCurrencyWithSymbol(
-                          appliedJob['job_id']['salary_range_min'] ?? '',
+                          int.tryParse(
+                                appliedJob['job_id']['salary_range_min']
+                                        ?.toString() ??
+                                    '',
+                              ) ??
+                              0,
                           appliedJob['job_id']['type_money']['symbol'] ?? '',
                         ) +
                         " - " +
                         Currency.formatCurrencyWithSymbol(
-                          appliedJob['job_id']['salary_range_max'] ?? '',
+                          int.tryParse(
+                                appliedJob['job_id']['salary_range_max']
+                                        ?.toString() ??
+                                    '',
+                              ) ??
+                              0,
                           appliedJob['job_id']['type_money']['symbol'] ?? '',
                         ),
                     style: TextStyle(fontSize: 14),
