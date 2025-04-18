@@ -72,14 +72,38 @@ class JobDetailScreenState extends State<JobDetailScreen> {
           'job_id': widget.id.toString(),
           'user_id': user!.id.toString(),
         }, token: token);
+    print("duydeptrai ung tuyen $response");
     if (response['statusCode'] == 201) {
       if (response['data'].length == 0) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Đã hủy yêu thích')));
-      } else {
+        setState(() {
+          isFavorite = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đã thêm vào danh sách yêu thích')),
+          SnackBar(
+            content: Text('Đã hủy yêu thích'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 135,
+              left: 20,
+              right: 20,
+            ),
+          ),
+        );
+      } else {
+        setState(() {
+          isFavorite = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã thêm vào danh sách yêu thích'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 135,
+              left: 20,
+              right: 20,
+            ),
+          ),
         );
       }
       getDetailFavorite();
@@ -106,16 +130,21 @@ class JobDetailScreenState extends State<JobDetailScreen> {
           "favorite-jobs/get-detail?user_id=${user!.id}&job_id=${widget.id}",
       token: token,
     );
+    print("duydeptrai vcl ${response}");
     if (response['statusCode'] == 200) {
       setState(() {
         isFavorite = true;
       });
-    }
-    if (response['response']['statusCode'] == 404) {
+    } else {
       setState(() {
         isFavorite = false;
       });
     }
+    // if (response['response']['statusCode'] == 404) {
+    //   setState(() {
+    //     isFavorite = false;
+    //   });
+    // }
   }
 
   Future<void> applyJob() async {
