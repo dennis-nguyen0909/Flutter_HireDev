@@ -261,49 +261,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 SizedBox(height: 10),
-                Center(child: Text('Hoặc')),
-                SizedBox(height: 10),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        icon: FaIcon(
-                          FontAwesomeIcons.facebook,
-                          color: Colors.blue,
-                        ),
-                        onPressed: _loginWithFacebook,
-                        label: Text("Đăng nhập với Facebook"),
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16),
+                // Center(child: Text('Hoặc')),
+                // SizedBox(height: 10),
+                // Column(
+                //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                //   children: [
+                //     SizedBox(
+                //       width: double.infinity,
+                //       child: OutlinedButton.icon(
+                //         icon: FaIcon(
+                //           FontAwesomeIcons.facebook,
+                //           color: Colors.blue,
+                //         ),
+                //         onPressed: _loginWithFacebook,
+                //         label: Text("Đăng nhập với Facebook"),
+                //         style: OutlinedButton.styleFrom(
+                //           padding: EdgeInsets.symmetric(vertical: 16),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(8.0),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //     SizedBox(height: 16),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        icon: FaIcon(
-                          FontAwesomeIcons.google,
-                          color: Colors.red,
-                        ),
-                        onPressed: handleLoginGoogle,
-                        label: Text("Đăng nhập với Google"),
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                //     SizedBox(
+                //       width: double.infinity,
+                //       child: OutlinedButton.icon(
+                //         icon: FaIcon(
+                //           FontAwesomeIcons.google,
+                //           color: Colors.red,
+                //         ),
+                //         onPressed: handleLoginGoogle,
+                //         label: Text("Đăng nhập với Google"),
+                //         style: OutlinedButton.styleFrom(
+                //           padding: EdgeInsets.symmetric(vertical: 16),
+                //           shape: RoundedRectangleBorder(
+                //             borderRadius: BorderRadius.circular(8.0),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
                 SizedBox(height: 20),
                 Center(
                   child: TextButton(

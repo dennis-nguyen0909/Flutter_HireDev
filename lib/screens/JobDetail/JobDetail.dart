@@ -78,6 +78,7 @@ class JobDetailScreenState extends State<JobDetailScreen> {
         setState(() {
           isFavorite = false;
         });
+        print("duydeptrai huy yeu thich ${response['data']}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Đã hủy yêu thích'),

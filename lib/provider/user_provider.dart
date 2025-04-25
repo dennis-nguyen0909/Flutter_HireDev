@@ -18,23 +18,16 @@ class UserProvider extends ChangeNotifier {
   bool get isCandidate => _user?.roleName == 'USER';
 
   Future<void> fetchUserDetails(String userId) async {
-    print('Fetching user details for ID: $userId');
     try {
       final token = await secureStorageService.getRefreshToken();
-      print('Token obtained: $token');
       final userDetails = await _apiService.get(
         dotenv.env['API_URL']! + 'users/$userId',
         token: token,
       );
-      print('User details response: $userDetails');
       if (userDetails != null) {
-        print(userDetails['data']['items']);
         _user = UserModel.fromJson(userDetails['data']['items']);
-        print('User object after parsing: $_user');
         notifyListeners();
-        print('UserProvider notified listeners');
       } else {
-        print('User details is null');
         _user = null;
         notifyListeners();
       }
